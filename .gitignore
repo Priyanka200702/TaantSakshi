@@ -1,0 +1,14 @@
+# Data directory (saree photos per spec §3)
+data/
+out/
+
+# Python cache and bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+
+# Sample temporary outputs
+eval/sample_output/*.npz
+eval/sample_output/debug/

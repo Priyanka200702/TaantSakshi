@@ -1,0 +1,75 @@
+##############################################################################
+# TantSaakshi — Engine configuration
+# ALL engine constants live here. No magic numbers in code.
+# Values marked TBD are placeholders until measured on real photos (Gate A).
+##############################################################################
+
+card:
+  aruco_dict: DICT_4X4_50
+  marker_ids: [0, 1, 2, 3]       # TL, TR, BR, BL (clockwise from top-left)
+  marker_size_mm: 8.0
+  window_mm: 20.0                 # square measurement window (cut-out)
+  marker_gap_mm: 3.0              # inner edge of each marker is 3 mm from window edge
+  margin_mm: 4.0                  # outer card margin; card = 50 mm square (computed below)
+  # card_size_mm = window_mm + 2*(marker_gap_mm + marker_size_mm) + 2*margin_mm
+  #              = 20 + 2*(3+8) + 2*4 = 50 mm
+  card_orientation: "arrow_along_warp"
+  # An arrow labelled "↑ along saree length" is printed on the card.
+  # The user places the card with the arrow parallel to the selvedge (saree long edge).
+  # The QR tag butts against the card's LEFT edge (which has a notch).
+  # After rectification warp threads run VERTICALLY in the window.
+  # FFT peak directions are PERPENDICULAR to thread lines, so:
+  #   peak near kx axis (horizontal) → warp → ends_per_inch
+  #   peak near ky axis (vertical)   → weft → picks_per_inch
+
+rectify:
+  canonical_px_per_mm: 40        # TBD after Gate A; code clamps to native if lower
+  fingerprint_px_per_mm: 25      # fixed scale for fingerprints (same across phones)
+
+quality:
+  min_markers: 4
+  min_native_px_per_mm: 20       # TBD after Gate A
+  min_px_per_thread: 4.0         # aliasing guard (theory min = 2; we demand 4)
+  min_sharpness: 60.0            # variance of Laplacian on the rectified window; TBD
+  max_saturated_fraction: 0.02   # glare
+  saturation_level: 250
+  max_dark_fraction: 0.30
+  max_tilt_deg: 25               # perspective tilt estimated from markers
+  min_peak_snr: 8.0              # FFT peak must stand out from background
+  max_design_energy_ratio: 0.5   # TBD: low-frequency design energy vs thread energy
+
+enhance:
+  burst_frames: 5
+  stack_top_k: 3
+  flatfield_sigma_px: 25
+
+fft:
+  band_min_px_per_cycle: 2.5     # ignore finer (noise)
+  band_max_px_per_cycle: 40      # ignore slower (designs, folds)
+  dc_mask_radius: 3
+  peak_exclusion_deg: 25
+  expect_perpendicular_tol_deg: 15
+
+defects:
+  notch_radius: 3
+  harmonics: 3
+  residual_sigma_k: 4.0
+  min_blob_area_px: 40
+
+grade:                            # PROVISIONAL — to be agreed with the cooperative
+  use_defects: false              # Report defects but do not penalise grade until tuned on real sarees
+  A: {max_irregularity: 0.04, max_defect_fraction: 0.002}
+  B: {max_irregularity: 0.08, max_defect_fraction: 0.01}
+  # else C
+
+fingerprint:
+  method: both                    # residual | sift | both
+  residual_size_px: 400
+  sift_nfeatures: 1500
+  ratio_test: 0.75
+  ransac_reproj_px: 3.0
+  max_scale_change: 0.08
+  max_rotation_deg: 6
+  match_threshold_residual: null  # set from eval_fingerprint.py; null → uncalibrated
+  match_threshold_inliers: null   # set from eval_fingerprint.py; null → uncalibrated
+
