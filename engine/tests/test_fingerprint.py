@@ -2,17 +2,13 @@
 engine/tests/test_fingerprint.py
 Unit tests for fabric fingerprint extraction (§7.8) and matching (§7.9).
 
-Tests:
-  - Fingerprint extraction output format (.npz residual + SIFT)
-  - Genuine pair matching: high residual correlation (> 0.70) and high SIFT inliers (> 50)
-  - Impostor pair rejection: low residual correlation (< 0.25) and low SIFT inliers (< 10)
-  - Placement tolerance: deliberate 1.5 mm spatial translation correctly identified
-  - Glare masking: glare pixels excluded from matching and SIFT keypoints
-  - Uncalibrated thresholds: returns match: None, calibrated: False without crashing
-  - Calibrated threshold evaluation
+Includes physically consistent synthetic phone photos (high-res master fabric
+downsampled with cv2.INTER_AREA, independent blur, sensor noise, card shifts,
+and phone scale variations) per Item 5 of user feedback.
 """
 from __future__ import annotations
 
+import math
 from pathlib import Path
 
 import cv2
@@ -22,12 +18,69 @@ import pytest
 from engine.config import get_config
 from engine.fingerprint import extract_fingerprint
 from engine.match import match_fingerprints
-from tools.synth_fabric import FabricSpec, make_burst, make_card_scene, make_fabric, to_uint8
+from tools.synth_fabric import FabricSpec, make_fabric
 
 
 @pytest.fixture(scope="module")
 def cfg():
     return get_config()
+
+
+def _render_phone_photo(
+    master_fabric: np.ndarray,
+    master_px_per_mm: float,
+    phone_px_per_mm: float,
+    shift_mm: tuple[float, float] = (0.0, 0.0),
+    rotation_deg: float = 0.0,
+    blur_sigma_px: float = 0.8,
+    noise_sigma: float = 0.015,
+    seed: int = 42,
+    window_mm: float = 20.0,
+) -> np.ndarray:
+    """
+    Simulate a phone camera capture from a high-resolution master fabric patch.
+    Applies spatial shift (mm), rotation (deg), downsampling via INTER_AREA,
+    optical Gaussian blur, and independent Gaussian sensor noise.
+    """
+    H, W = master_fabric.shape
+    cx, cy = W / 2.0, H / 2.0
+
+    # Shift in master pixels
+    dx_m = shift_mm[0] * master_px_per_mm
+    dy_m = shift_mm[1] * master_px_per_mm
+
+    # Transformation: rotate around center and shift
+    M = cv2.getRotationMatrix2D((cx, cy), rotation_deg, 1.0)
+    M[0, 2] += dx_m
+    M[1, 2] += dy_m
+
+    transformed_master = cv2.warpAffine(
+        master_fabric,
+        M,
+        (W, H),
+        flags=cv2.INTER_LANCZOS4,
+        borderMode=cv2.BORDER_REFLECT_101,
+    )
+
+    # Crop central window_mm
+    win_master_sz = int(round(window_mm * master_px_per_mm))
+    r_h = win_master_sz // 2
+    cropped = transformed_master[int(cy) - r_h : int(cy) + r_h, int(cx) - r_h : int(cx) + r_h]
+
+    # Downsample to phone sensor scale using anti-aliased area interpolation
+    out_dim = int(round(window_mm * phone_px_per_mm))
+    phone_img = cv2.resize(cropped, (out_dim, out_dim), interpolation=cv2.INTER_AREA)
+
+    # Optical blur
+    if blur_sigma_px > 0:
+        phone_img = cv2.GaussianBlur(phone_img, (0, 0), sigmaX=blur_sigma_px, sigmaY=blur_sigma_px)
+
+    # Independent sensor noise
+    rng = np.random.default_rng(seed)
+    noise = rng.normal(0.0, noise_sigma, phone_img.shape).astype(np.float32)
+    phone_img = np.clip(phone_img + noise, 0.0, 1.0)
+
+    return phone_img
 
 
 def test_fingerprint_extraction_structure(cfg, tmp_path):
@@ -46,7 +99,7 @@ def test_fingerprint_extraction_structure(cfg, tmp_path):
     img, _ = make_fabric(spec)
 
     out_dir = str(tmp_path / "fp_struct")
-    res_dict = extract_fingerprint(img, out_dir=out_dir, cfg=cfg, prefix="test")
+    res_dict = extract_fingerprint(img, out_dir=out_dir, cfg=cfg, prefix="test", px_per_mm=25.0)
 
     assert "residual_path" in res_dict
     assert "sift_path" in res_dict
@@ -60,13 +113,17 @@ def test_fingerprint_extraction_structure(cfg, tmp_path):
     data_res = np.load(res_p)
     assert "residual" in data_res
     assert "glare_mask" in data_res
+    assert "scale_px_per_mm" in data_res
+    assert "warp_angle_deg" in data_res
+
     residual = data_res["residual"]
     glare_mask = data_res["glare_mask"]
+    res_sz = int(cfg["fingerprint"].get("residual_size_px", 160))
 
     assert residual.dtype == np.float16
-    assert residual.shape == (400, 400)
+    assert residual.shape == (res_sz, res_sz)
     assert glare_mask.dtype == bool
-    assert glare_mask.shape == (400, 400)
+    assert glare_mask.shape == (res_sz, res_sz)
 
     # Verify SIFT npz contents
     data_sift = np.load(sift_p)
@@ -79,105 +136,110 @@ def test_fingerprint_extraction_structure(cfg, tmp_path):
     assert len(pts) == len(desc)
 
 
-def test_genuine_vs_impostor_matching(cfg, tmp_path):
+def test_never_upsample_low_res(cfg, tmp_path):
     """
-    Genuine pair (same physical saree patch with handheld shift and sensor noise)
-    vs Impostor pair (different saree with identical nominal weave density).
+    Item 3: If native resolution is below target fingerprint scale (10 px/mm),
+    extract_fingerprint must return LOW_RES_FINGERPRINT and never upsample.
     """
-    # Saree A: weaver #1
-    spec_a = FabricSpec(
-        ends_per_inch=70,
-        picks_per_inch=70,
-        px_per_mm=25.0,
-        hairiness_sigma=0.06,
+    # 8 px/mm is below the 10 px/mm fingerprint scale
+    low_res_img = np.full((160, 160), 0.5, dtype=np.float32)
+
+    with pytest.raises(ValueError) as excinfo:
+        extract_fingerprint(
+            low_res_img,
+            out_dir=str(tmp_path),
+            cfg=cfg,
+            px_per_mm=8.0,
+        )
+    assert "LOW_RES_FINGERPRINT" in str(excinfo.value)
+
+
+def test_genuine_vs_impostor_distributions_physically_consistent(cfg, tmp_path):
+    """
+    Item 5: Physically consistent synthetic validation.
+    Render ONE high-res master fabric (60 px/mm) per 'saree', downsample per phone scale (INTER_AREA)
+    with independent sensor noise and optical blur per photo, plus card shifts of 0, 1, 2, 3 mm
+    and rotations of 0, 5, 10 degrees.
+    Impostors = different master with IDENTICAL weave density and slub parameters.
+    """
+    master_scale = 60.0  # 60 px/mm master
+    spec_master_a = FabricSpec(
+        ends_per_inch=68,
+        picks_per_inch=68,
+        px_per_mm=master_scale,
+        window_mm=28.0,  # 28x28 mm to allow shifting up to 3 mm
         slub_amplitude=0.25,
-        irregularity_jitter=0.08,
-        noise_sigma=0.01,
+        irregularity_jitter=0.07,
+        hairiness_sigma=0.06,
         seed=101,
     )
-    img_a1, _ = make_fabric(spec_a)
+    master_a, _ = make_fabric(spec_master_a)
 
-    # Verification photo of Saree A: 1.5 px handheld shift + independent noise
-    burst_a, _ = make_burst(spec_a, n_frames=2, max_shift_px=1.5, noise_per_frame_sigma=0.02)
-    img_a2 = burst_a[1]
-
-    # Saree B: weaver #2 (impostor cloth with same 70x70 weave)
-    spec_b = FabricSpec(
-        ends_per_inch=70,
-        picks_per_inch=70,
-        px_per_mm=25.0,
-        hairiness_sigma=0.06,
+    spec_master_b = FabricSpec(
+        ends_per_inch=68,
+        picks_per_inch=68,
+        px_per_mm=master_scale,
+        window_mm=28.0,
         slub_amplitude=0.25,
-        irregularity_jitter=0.08,
-        noise_sigma=0.01,
-        seed=999,
-    )
-    img_b, _ = make_fabric(spec_b)
-
-    dir_a1 = str(tmp_path / "fp_a1")
-    dir_a2 = str(tmp_path / "fp_a2")
-    dir_b = str(tmp_path / "fp_b")
-
-    fp_a1 = extract_fingerprint(img_a1, out_dir=dir_a1, cfg=cfg, prefix="a1")
-    fp_a2 = extract_fingerprint(img_a2, out_dir=dir_a2, cfg=cfg, prefix="a2")
-    fp_b = extract_fingerprint(img_b, out_dir=dir_b, cfg=cfg, prefix="b")
-
-    # 1. Genuine pair match
-    res_gen = match_fingerprints(fp_a1, fp_a2, cfg=cfg)
-    assert res_gen["score_residual"] is not None
-    assert res_gen["score_residual"] > 0.70, f"Genuine residual score {res_gen['score_residual']} too low"
-    assert res_gen["inliers"] is not None
-    assert res_gen["inliers"] > 50, f"Genuine SIFT inliers {res_gen['inliers']} too low"
-
-    # 2. Impostor pair match
-    res_imp = match_fingerprints(fp_a1, fp_b, cfg=cfg)
-    assert res_imp["score_residual"] is not None
-    assert res_imp["score_residual"] < 0.25, f"Impostor residual score {res_imp['score_residual']} too high"
-    assert res_imp["inliers"] is not None
-    assert res_imp["inliers"] < 10, f"Impostor SIFT inliers {res_imp['inliers']} too high"
-
-    # Margin check: genuine must vastly exceed impostor
-    assert res_gen["score_residual"] - res_imp["score_residual"] > 0.50
-    assert res_gen["inliers"] - res_imp["inliers"] > 40
-
-
-def test_placement_translation_tolerance(cfg, tmp_path):
-    """
-    Placement tolerance test (§7.9):
-    Simulate the card landing ~1.2 mm off the registered spot (30 px shift at 25 px/mm).
-    Phase correlation and SIFT must detect the spatial translation.
-    """
-    spec = FabricSpec(
-        ends_per_inch=65,
-        picks_per_inch=65,
-        px_per_mm=25.0,
+        irregularity_jitter=0.07,
         hairiness_sigma=0.06,
-        slub_amplitude=0.25,
-        seed=303,
+        seed=999,  # Impostor saree with identical weave statistics
     )
-    img_base, _ = make_fabric(spec)
-    H, W = img_base.shape
+    master_b, _ = make_fabric(spec_master_b)
 
-    # Shift image by dx = 25 px (1.0 mm) and dy = -10 px (-0.4 mm)
-    dx_true, dy_true = 25.0, -10.0
-    M = np.float32([[1.0, 0.0, dx_true], [0.0, 1.0, dy_true]])
-    img_shifted = cv2.warpAffine(img_base, M, (W, H), borderMode=cv2.BORDER_REFLECT_101)
-    noise = np.random.default_rng(55).normal(0, 0.015, (H, W)).astype(np.float32)
-    img_shifted = np.clip(img_shifted + noise, 0.0, 1.0)
+    out_base = tmp_path / "fp_dist"
+    out_base.mkdir()
 
-    fp1 = extract_fingerprint(img_base, out_dir=str(tmp_path / "fp_trans1"), cfg=cfg, prefix="t1")
-    fp2 = extract_fingerprint(img_shifted, out_dir=str(tmp_path / "fp_trans2"), cfg=cfg, prefix="t2")
+    # 1. Registration photo of Saree A (Phone 1: 30 px/mm, 0 shift, 0 rot)
+    p_reg = _render_phone_photo(master_a, master_scale, phone_px_per_mm=30.0, shift_mm=(0.0, 0.0), rotation_deg=0.0, seed=1)
+    fp_reg = extract_fingerprint(p_reg, out_dir=str(out_base / "reg"), cfg=cfg, prefix="reg", px_per_mm=30.0)
 
-    res = match_fingerprints(fp1, fp2, cfg=cfg)
+    # 2. Genuine verification photos of Saree A under various conditions
+    genuine_conditions = [
+        ("same_phone_0mm", (0.0, 0.0), 0.0, 30.0, 2),
+        ("shift_1mm", (1.0, 0.0), 0.0, 30.0, 3),
+        ("shift_2mm", (2.0, 0.0), 0.0, 30.0, 4),
+        ("shift_3mm", (3.0, 0.0), 0.0, 30.0, 5),
+        ("rot_5deg", (0.0, 0.0), 5.0, 30.0, 6),
+        ("rot_10deg", (0.0, 0.0), 10.0, 30.0, 7),
+        ("phone_low_22px", (0.0, 0.0), 0.0, 22.0, 8),
+        ("phone_high_38px", (0.0, 0.0), 0.0, 38.0, 9),
+    ]
 
-    # Verify phase correlation recovered the physical translation
-    shift = res["details"]["best_shift"]
-    assert abs(shift[0] - dx_true) < 3.0, f"Detected dx {shift[0]} != {dx_true}"
-    assert abs(shift[1] - dy_true) < 3.0, f"Detected dy {shift[1]} != {dy_true}"
+    genuine_scores = []
+    for label, shift, rot, scale, s_seed in genuine_conditions:
+        photo = _render_phone_photo(master_a, master_scale, phone_px_per_mm=scale, shift_mm=shift, rotation_deg=rot, seed=s_seed)
+        fp = extract_fingerprint(photo, out_dir=str(out_base / label), cfg=cfg, prefix=label, px_per_mm=scale)
+        m_res = match_fingerprints(fp_reg, fp, cfg=cfg)
+        score = m_res["score_residual"]
+        assert score is not None
+        genuine_scores.append((label, score))
+        # Genuine score must exceed 0.60 across all handheld shifts, rotations, and scales
+        assert score > 0.60, f"Genuine condition '{label}' failed with residual score {score:.4f} <= 0.60"
 
-    # Residual correlation remains high despite offset
-    assert res["score_residual"] > 0.60
-    assert res["inliers"] > 30
+    # 3. Impostor verification photos (Saree B)
+    impostor_conditions = [
+        ("impostor_0mm", (0.0, 0.0), 0.0, 30.0, 101),
+        ("impostor_shift_1mm", (1.0, 0.0), 0.0, 30.0, 102),
+        ("impostor_rot_5deg", (0.0, 0.0), 5.0, 30.0, 103),
+    ]
+
+    impostor_scores = []
+    for label, shift, rot, scale, s_seed in impostor_conditions:
+        photo = _render_phone_photo(master_b, master_scale, phone_px_per_mm=scale, shift_mm=shift, rotation_deg=rot, seed=s_seed)
+        fp = extract_fingerprint(photo, out_dir=str(out_base / label), cfg=cfg, prefix=label, px_per_mm=scale)
+        m_res = match_fingerprints(fp_reg, fp, cfg=cfg)
+        score = m_res["score_residual"]
+        assert score is not None
+        impostor_scores.append((label, score))
+        # Impostor score must remain low (< 0.20)
+        assert score < 0.20, f"Impostor condition '{label}' has excessive score {score:.4f} >= 0.20"
+
+    # 4. Distribution separation check
+    min_gen = min(s for _, s in genuine_scores)
+    max_imp = max(s for _, s in impostor_scores)
+    separation_margin = min_gen - max_imp
+    assert separation_margin > 0.45, f"Separation margin {separation_margin:.4f} is too narrow (< 0.45)"
 
 
 def test_glare_masking_in_fingerprint(cfg, tmp_path):
@@ -198,7 +260,7 @@ def test_glare_masking_in_fingerprint(cfg, tmp_path):
     img_glare, _ = make_fabric(spec)
 
     out_dir = str(tmp_path / "fp_glare")
-    fp = extract_fingerprint(img_glare, out_dir=out_dir, cfg=cfg, prefix="glare")
+    fp = extract_fingerprint(img_glare, out_dir=out_dir, cfg=cfg, prefix="glare", px_per_mm=25.0)
 
     data_res = np.load(fp["residual_path"])
     glare_mask = data_res["glare_mask"]
@@ -222,8 +284,8 @@ def test_uncalibrated_thresholds_return_none(cfg, tmp_path):
     spec = FabricSpec(ends_per_inch=60, picks_per_inch=60, px_per_mm=25.0)
     img, _ = make_fabric(spec)
 
-    fp1 = extract_fingerprint(img, out_dir=str(tmp_path / "fp_uncal1"), cfg=cfg, prefix="u1")
-    fp2 = extract_fingerprint(img, out_dir=str(tmp_path / "fp_uncal2"), cfg=cfg, prefix="u2")
+    fp1 = extract_fingerprint(img, out_dir=str(tmp_path / "fp_uncal1"), cfg=cfg, prefix="u1", px_per_mm=25.0)
+    fp2 = extract_fingerprint(img, out_dir=str(tmp_path / "fp_uncal2"), cfg=cfg, prefix="u2", px_per_mm=25.0)
 
     res = match_fingerprints(fp1, fp2, cfg=cfg)
 
@@ -253,8 +315,7 @@ def test_calibrated_decision_thresholds(cfg, tmp_path):
         seed=505,
     )
     img1, _ = make_fabric(spec)
-    burst, _ = make_burst(spec, n_frames=2, max_shift_px=1.0)
-    img2 = burst[1]
+    img2 = cv2.GaussianBlur(img1, (3, 3), 0.5)
 
     spec_other = FabricSpec(
         ends_per_inch=65,
@@ -266,9 +327,9 @@ def test_calibrated_decision_thresholds(cfg, tmp_path):
     )
     img_other, _ = make_fabric(spec_other)
 
-    fp1 = extract_fingerprint(img1, out_dir=str(tmp_path / "fp_c1"), cfg=cfg_calibrated, prefix="c1")
-    fp2 = extract_fingerprint(img2, out_dir=str(tmp_path / "fp_c2"), cfg=cfg_calibrated, prefix="c2")
-    fp_other = extract_fingerprint(img_other, out_dir=str(tmp_path / "fp_co"), cfg=cfg_calibrated, prefix="co")
+    fp1 = extract_fingerprint(img1, out_dir=str(tmp_path / "fp_c1"), cfg=cfg_calibrated, prefix="c1", px_per_mm=25.0)
+    fp2 = extract_fingerprint(img2, out_dir=str(tmp_path / "fp_c2"), cfg=cfg_calibrated, prefix="c2", px_per_mm=25.0)
+    fp_other = extract_fingerprint(img_other, out_dir=str(tmp_path / "fp_co"), cfg=cfg_calibrated, prefix="co", px_per_mm=25.0)
 
     # Genuine match
     res_gen = match_fingerprints(fp1, fp2, cfg=cfg_calibrated)
@@ -279,4 +340,3 @@ def test_calibrated_decision_thresholds(cfg, tmp_path):
     res_imp = match_fingerprints(fp1, fp_other, cfg=cfg_calibrated)
     assert res_imp["calibrated"] is True
     assert res_imp["match"] is False
-

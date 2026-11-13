@@ -342,10 +342,19 @@ def make_card_scene(
         picks_per_inch=spec.picks_per_inch,
         px_per_mm=scale,
         window_mm=window_mm,
+        amplitude=spec.amplitude,
         grid_angle_deg=spec.grid_angle_deg,
         noise_sigma=spec.noise_sigma,
         hairiness_sigma=spec.hairiness_sigma,
         harmonic_amplitude=spec.harmonic_amplitude,
+        slub_amplitude=spec.slub_amplitude,
+        irregularity_jitter=spec.irregularity_jitter,
+        uneven_lighting=spec.uneven_lighting,
+        gaussian_blur_sigma=spec.gaussian_blur_sigma,
+        defect_type=spec.defect_type,
+        defect_location=spec.defect_location,
+        design_stripe_amplitude=spec.design_stripe_amplitude,
+        design_stripe_period_mm=spec.design_stripe_period_mm,
         seed=seed,
     )
     fabric_img, gt = make_fabric(fab_spec)
@@ -406,6 +415,10 @@ def make_card_scene(
         pts_dst = np.float32(pts_dst)
         M_warp = cv2.getPerspectiveTransform(pts_src, pts_dst)
         scene = cv2.warpPerspective(scene, M_warp, (W_out, H_out), borderValue=0.25)
+
+    # Per-photo sensor noise
+    rng = np.random.default_rng(seed if seed is not None else 0)
+    scene = scene + rng.normal(0, 0.01, scene.shape).astype(np.float32)
 
     info = {
         "ground_truth": gt,

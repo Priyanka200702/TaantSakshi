@@ -78,6 +78,7 @@ def test_analyze_end_to_end_clean(cfg, tmp_path):
 def test_analyze_burst_stacking(cfg, tmp_path):
     """
     Test analyze() on a burst of 3 frames with sub-pixel handheld shifts.
+    Verifies that n_stacked is exposed and exactly 3 of 3 frames get stacked.
     """
     spec = FabricSpec(ends_per_inch=60, picks_per_inch=60)
     burst_paths = []
@@ -94,7 +95,59 @@ def test_analyze_burst_stacking(cfg, tmp_path):
 
     assert res["ok"]
     assert res["code"] == "OK"
+    assert "n_stacked" in res
+    assert res["n_stacked"] == 3, f"Expected 3 frames stacked, got {res['n_stacked']}"
     assert "stacking" in res["timings_ms"]
+
+
+def test_analyze_burst_one_bad_frame(cfg, tmp_path):
+    """
+    Item 7: One bad frame must not fail the burst.
+    If 3 frames are valid and 1 frame is blurred/corrupted with no card,
+    the burst must still succeed and stack the 3 valid frames.
+    """
+    spec = FabricSpec(ends_per_inch=60, picks_per_inch=60)
+    burst_paths = []
+
+    for i in range(3):
+        scene_f32, _ = make_card_scene(spec, cfg, tilt_deg=1.0 * (i - 1), camera_px_per_mm=30.0, seed=100 + i)
+        p = str(tmp_path / f"burst_good_{i}.png")
+        cv2.imwrite(p, to_uint8(scene_f32))
+        burst_paths.append(p)
+
+    # 4th frame: pure noise image with no card
+    noise_frame = np.full((1200, 1200, 3), 128, dtype=np.uint8)
+    p_bad = str(tmp_path / "burst_bad_3.png")
+    cv2.imwrite(p_bad, noise_frame)
+    burst_paths.append(p_bad)
+
+    out_dir = str(tmp_path / "out_burst_bad_frame")
+    res = analyze(burst_paths, out_dir=out_dir)
+
+    assert res["ok"] is True, f"Burst failed unexpectedly: {res.get('code')}"
+    assert res["code"] == "OK"
+    assert res["n_stacked"] == 3
+
+
+def test_error_resilience_never_raise(cfg, tmp_path):
+    """
+    Item 9: Never raise on invalid files. Return codes BAD_IMAGE.
+    """
+    non_existent = str(tmp_path / "does_not_exist_file.png")
+
+    res_an = analyze([non_existent], out_dir=str(tmp_path))
+    assert res_an["ok"] is False
+    assert res_an["code"] == "BAD_IMAGE"
+
+    res_qc = quality_check([non_existent])
+    assert res_qc["ok"] is False
+    assert res_qc["code"] == "BAD_IMAGE"
+
+    res_fp = fingerprint(non_existent)
+    assert res_fp is None
+
+    res_match = match("non_existent_a.npz", "non_existent_b.npz")
+    assert res_match["ok"] is True or res_match["code"] in ("OK", "MATCH_FAILED")
 
 
 def test_quality_rejection_no_card(cfg, tmp_path):

@@ -56,7 +56,13 @@ def quality_check(image_paths: list[str | np.ndarray]) -> dict[str, Any]:
     if not image_paths:
         return {"ok": False, "code": "NO_CARD", "reason": "No image frames provided", "metrics": {}}
 
-    first_img = _load_image(image_paths[0])
+    try:
+        first_img = _load_image(image_paths[0])
+        if first_img is None or first_img.size == 0:
+            return {"ok": False, "code": "BAD_IMAGE", "reason": "First image is empty or invalid", "metrics": {}}
+    except Exception as e:
+        return {"ok": False, "code": "BAD_IMAGE", "reason": f"Failed to load image: {e}", "metrics": {}}
+
     card_res = detect_and_rectify(first_img, cfg)
 
     # If card detection failed at Gate 1
@@ -105,26 +111,43 @@ def analyze(
             "timings_ms": {"total": 0.0},
         }
 
-    # 1. Load burst frames and detect/rectify card
+    # 1. Load burst frames (Item 9: never raise, return BAD_IMAGE)
     t0 = time.perf_counter()
     raw_images: list[np.ndarray] = []
-    rect_gray_frames: list[np.ndarray] = []
-    rect_color_frames: list[np.ndarray] = []
-    card_results: list[dict] = []
-
     for item in image_paths:
-        img = _load_image(item)
-        raw_images.append(img)
+        try:
+            img = _load_image(item)
+            if img is None or img.size == 0:
+                timings["total"] = (time.perf_counter() - t_start) * 1000
+                return {
+                    "ok": False,
+                    "code": "BAD_IMAGE",
+                    "reason": f"Image is empty or unreadable: {item}",
+                    "timings_ms": timings,
+                }
+            raw_images.append(img)
+        except Exception as e:
+            timings["total"] = (time.perf_counter() - t_start) * 1000
+            return {
+                "ok": False,
+                "code": "BAD_IMAGE",
+                "reason": f"Failed to load image: {e}",
+                "timings_ms": timings,
+            }
+
+    # Detect cards across burst frames
+    card_results: list[dict] = []
+    for img in raw_images:
         c_res = detect_and_rectify(img, cfg)
         card_results.append(c_res)
-        if c_res["ok"] and c_res["window_gray"] is not None:
-            rect_gray_frames.append(c_res["window_gray"])
-            rect_color_frames.append(c_res["window_color"])
 
     timings["card_detection"] = (time.perf_counter() - t0) * 1000
 
-    # If no frames passed card detection, return Gate 1 failure from the first frame
-    if not rect_gray_frames:
+    # Item 7: Filter frames that passed card detection
+    good_indices = [i for i, c in enumerate(card_results) if c.get("ok")]
+
+    if not good_indices:
+        # None passed Gate 1: evaluate Gate 1 failure on the first frame
         first_img = raw_images[0]
         first_card = card_results[0]
         q_eval = evaluate_quality(first_img, first_card, None, None, cfg)
@@ -137,10 +160,26 @@ def analyze(
             "timings_ms": timings,
         }
 
-    # Use the best card result for metadata
-    best_card = card_results[0]
-    effective_scale = best_card["px_per_mm"]
-    native_scale = best_card["native_px_per_mm"]
+    # Item 7: Pick the BEST card result among frames that passed (lowest tilt, highest native res)
+    best_idx = sorted(
+        good_indices,
+        key=lambda i: (card_results[i]["tilt_deg"], -card_results[i]["native_px_per_mm"])
+    )[0]
+    best_card = card_results[best_idx]
+    primary_img = raw_images[best_idx]
+
+    # Item 8: Rectify all frames of a burst at ONE common scale = min(native of all good frames, canonical), so stacking works
+    canonical_scale = float(cfg["rectify"]["canonical_px_per_mm"])
+    min_native = min(card_results[i]["native_px_per_mm"] for i in good_indices)
+    common_scale = min(min_native, canonical_scale)
+
+    rect_gray_frames: list[np.ndarray] = []
+    rect_color_frames: list[np.ndarray] = []
+    for i in good_indices:
+        c_rect = detect_and_rectify(raw_images[i], cfg, target_px_per_mm=common_scale)
+        if c_rect["ok"] and c_rect["window_gray"] is not None:
+            rect_gray_frames.append(c_rect["window_gray"])
+            rect_color_frames.append(c_rect["window_color"])
 
     # 2. Multi-frame enhancement & stacking (§8)
     t0 = time.perf_counter()
@@ -156,12 +195,10 @@ def analyze(
 
     # 3. FFT Analysis & Provisional Grading (§7.3 - §7.7)
     t0 = time.perf_counter()
-    fft_res = run_fft_grade(clean_gray, effective_scale, cfg, debug_dir=debug_dir)
+    fft_res = run_fft_grade(clean_gray, common_scale, cfg, debug_dir=debug_dir)
     timings["fft_grade"] = (time.perf_counter() - t0) * 1000
 
     # 4. Quality Gate Evaluation (§7.2 priority sequence)
-    # Note: evaluate exposure/glare on stacked_gray before inpainting
-    primary_img = raw_images[0]
     q_eval = evaluate_quality(primary_img, best_card, stacked_gray, fft_res, cfg)
 
     # 5. Debug artifact export (§7.10)
@@ -185,15 +222,35 @@ def analyze(
             "code": q_eval["code"],
             "reason": q_eval["reason"],
             "quality": q_eval["metrics"],
+            "n_stacked": n_stacked,
             "timings_ms": timings,
         }
 
-    # 5. Fingerprint extraction (§7.8)
+    # 6. Fingerprint extraction (§7.8) - Item 9: never raise, return codes BAD_IMAGE / FINGERPRINT_FAILED
     t0 = time.perf_counter()
     fp_prefix = Path(image_paths[0]).stem if isinstance(image_paths[0], (str, Path)) else "fp"
-    fp_result = extract_fingerprint(image_paths, out_dir=out_dir, cfg=cfg, prefix=fp_prefix)
-    timings["fingerprint"] = (time.perf_counter() - t0) * 1000
+    try:
+        fp_result = extract_fingerprint(
+            stacked_gray,
+            out_dir=out_dir,
+            cfg=cfg,
+            prefix=fp_prefix,
+            px_per_mm=common_scale,
+        )
+    except Exception as e:
+        err_s = str(e)
+        code = "LOW_RES_FINGERPRINT" if "LOW_RES_FINGERPRINT" in err_s else "FINGERPRINT_FAILED"
+        timings["total"] = (time.perf_counter() - t_start) * 1000
+        return {
+            "ok": False,
+            "code": code,
+            "reason": f"Fingerprint extraction failed: {e}",
+            "quality": q_eval["metrics"],
+            "n_stacked": n_stacked,
+            "timings_ms": timings,
+        }
 
+    timings["fingerprint"] = (time.perf_counter() - t0) * 1000
     timings["total"] = (time.perf_counter() - t_start) * 1000
 
     # Success payload matching contract (§6.2)
@@ -201,7 +258,8 @@ def analyze(
         "ok": True,
         "code": "OK",
         "reason": "",
-        "native_px_per_mm": native_scale,
+        "n_stacked": n_stacked,
+        "native_px_per_mm": best_card["native_px_per_mm"],
         "px_per_thread": fft_res.get("px_per_thread", {}),
         "ends_per_inch": fft_res.get("ends_per_inch"),
         "picks_per_inch": fft_res.get("picks_per_inch"),
@@ -222,7 +280,16 @@ def make_fingerprint(image_paths: list[str | np.ndarray], out_dir: str) -> dict[
     Verification flow: quality check + fingerprint only (§6.2).
     """
     cfg = get_config()
-    qc = quality_check(image_paths)
+    try:
+        qc = quality_check(image_paths)
+    except Exception as e:
+        return {
+            "ok": False,
+            "code": "BAD_IMAGE",
+            "reason": f"Failed to check image: {e}",
+            "fingerprint": {"residual_path": None, "sift_path": None},
+        }
+
     if not qc["ok"]:
         return {
             "ok": False,
@@ -232,13 +299,23 @@ def make_fingerprint(image_paths: list[str | np.ndarray], out_dir: str) -> dict[
         }
 
     fp_prefix = Path(image_paths[0]).stem if isinstance(image_paths[0], (str, Path)) else "fp"
-    fp_result = extract_fingerprint(image_paths, out_dir=out_dir, cfg=cfg, prefix=fp_prefix)
-    return {
-        "ok": True,
-        "code": "OK",
-        "reason": "",
-        "fingerprint": fp_result,
-    }
+    try:
+        fp_result = extract_fingerprint(image_paths, out_dir=out_dir, cfg=cfg, prefix=fp_prefix)
+        return {
+            "ok": True,
+            "code": "OK",
+            "reason": "",
+            "fingerprint": fp_result,
+        }
+    except Exception as e:
+        err_s = str(e)
+        code = "LOW_RES_FINGERPRINT" if "LOW_RES_FINGERPRINT" in err_s else "FINGERPRINT_FAILED"
+        return {
+            "ok": False,
+            "code": code,
+            "reason": f"Fingerprint extraction failed: {e}",
+            "fingerprint": {"residual_path": None, "sift_path": None},
+        }
 
 
 def match(fp_a: dict | str, fp_b: dict | str) -> dict[str, Any]:
@@ -246,8 +323,22 @@ def match(fp_a: dict | str, fp_b: dict | str) -> dict[str, Any]:
     Fingerprint comparison (§6.2, §7.9).
     """
     cfg = get_config()
-    res = match_fingerprints(fp_a, fp_b, cfg=cfg)
-    res["ok"] = True
-    res["code"] = "OK"
-    res["reason"] = ""
-    return res
+    try:
+        res = match_fingerprints(fp_a, fp_b, cfg=cfg)
+        res["ok"] = True
+        res["code"] = "OK"
+        res["reason"] = ""
+        return res
+    except Exception as e:
+        return {
+            "ok": False,
+            "code": "MATCH_FAILED",
+            "reason": f"Match failed: {e}",
+            "match": None,
+            "score": None,
+            "score_residual": None,
+            "inliers": 0,
+            "calibrated": False,
+            "method": cfg.get("fingerprint", {}).get("method", "residual"),
+            "details": {},
+        }

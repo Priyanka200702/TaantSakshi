@@ -24,7 +24,7 @@ card:
 
 rectify:
   canonical_px_per_mm: 40        # TBD after Gate A; code clamps to native if lower
-  fingerprint_px_per_mm: 25      # fixed scale for fingerprints (same across phones)
+  fingerprint_px_per_mm: 10      # fixed low scale for fingerprints (below every phone's native)
 
 quality:
   min_markers: 4
@@ -49,12 +49,15 @@ fft:
   dc_mask_radius: 3
   peak_exclusion_deg: 25
   expect_perpendicular_tol_deg: 15
+  flatfield_sigma_px: 25.0
+  fwhm0: 2.00                    # Instrument-limited peak width at actual window N
 
 defects:
   notch_radius: 3
   harmonics: 3
   residual_sigma_k: 4.0
   min_blob_area_px: 40
+  threshold_floor: 0.04
 
 grade:                            # PROVISIONAL — to be agreed with the cooperative
   use_defects: false              # Report defects but do not penalise grade until tuned on real sarees
@@ -64,12 +67,15 @@ grade:                            # PROVISIONAL — to be agreed with the cooper
 
 fingerprint:
   method: both                    # residual | sift | both
-  residual_size_px: 400
-  sift_nfeatures: 1500
-  ratio_test: 0.75
+  scale_px_per_mm: 10.0           # fixed low scale (robust to phone blur and sensor noise)
+  min_feature_mm: 0.5             # slub scale band-pass: minimum feature size in mm
+  max_feature_mm: 5.0             # slub scale band-pass: maximum feature size in mm
+  residual_size_px: 160           # 16 mm crop at 10 px/mm
+  sift_nfeatures: 500
+  ratio_test: 0.80
   ransac_reproj_px: 3.0
-  max_scale_change: 0.08
-  max_rotation_deg: 6
+  max_scale_change: 0.10
+  max_rotation_deg: 8.0
   match_threshold_residual: null  # set from eval_fingerprint.py; null → uncalibrated
   match_threshold_inliers: null   # set from eval_fingerprint.py; null → uncalibrated
 

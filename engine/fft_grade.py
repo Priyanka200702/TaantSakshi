@@ -156,16 +156,18 @@ def run_fft_grade(
             })
 
     # ---- §7.5 Irregularity --------------------------------------------------
-    irr_warp = _measure_irregularity(F, p_warp, N)
-    irr_weft = _measure_irregularity(F, p_weft, N)
+    fwhm0 = float(fft_cfg.get("fwhm0", 2.00))
+    irr_warp = _measure_irregularity(F, p_warp, N, fwhm0=fwhm0)
+    irr_weft = _measure_irregularity(F, p_weft, N, fwhm0=fwhm0)
 
     # ---- §7.6 Defects -------------------------------------------------------
     residual, defect_result = _detect_defects(
         img_flat, [p_warp, p_weft], N, defect_cfg, px_per_mm=px_per_mm, debug_dir=debug_dir
     )
 
-    # ---- §7.7 Grade ---------------------------------------------------------
-    grade_str = _compute_grade(irr_warp["irregularity"], defect_result["area_fraction"], grade_cfg)
+    # ---- §7.7 Grade (uses max of warp and weft irregularity) ----------------
+    overall_irregularity = max(irr_warp["irregularity"], irr_weft["irregularity"])
+    grade_str = _compute_grade(overall_irregularity, defect_result["area_fraction"], grade_cfg)
 
     # ---- Peak SNR (also used as a quality metric) ---------------------------
     snr_warp = p_warp.get("snr", float("nan"))
@@ -230,9 +232,9 @@ def _preprocess(window: np.ndarray, fft_cfg: dict) -> tuple[np.ndarray, np.ndarr
     N = min(H, W)
     img = img[:N, :N]
 
-    # Flat-field: divide by heavy Gaussian blur, then subtract mean
+    # Flat-field: divide by Gaussian blur, then subtract mean
     # (removes uneven lighting and torch hotspots)
-    sigma = 25  # fixed; config has flatfield_sigma_px but that's for enhance.py
+    sigma = float(fft_cfg.get("flatfield_sigma_px", 25.0)) if isinstance(fft_cfg, dict) else 25.0
     blur = cv2.GaussianBlur(img, (0, 0), sigma)
     # Avoid division by zero
     blur = np.where(blur < 1e-6, 1e-6, blur)
@@ -344,11 +346,16 @@ def _find_two_peaks(
     # --- Harmonic check: prefer fundamental over harmonic ---
     p1, p2 = _prefer_fundamental(F, p1, p2, band_mask, N)
 
-    # Attach SNR to both peaks
-    p1["snr"] = snr
-    p2["snr"] = snr  # same background estimate
+    # Attach separate SNRs to each peak
+    val1 = float(F[int(round(cy + p1["ky"])), int(round(cx + p1["kx"]))])
+    val2 = float(F[int(round(cy + p2["ky"])), int(round(cx + p2["kx"]))])
+    snr1 = val1 / (median_band + 1e-10)
+    snr2 = val2 / (median_band + 1e-10)
+    p1["snr"] = snr1
+    p2["snr"] = snr2
+    min_snr = min(snr1, snr2)
 
-    return {"code": "OK", "reason": "", "peak1": p1, "peak2": p2, "snr": snr}
+    return {"code": "OK", "reason": "", "peak1": p1, "peak2": p2, "snr": min_snr, "snr1": snr1, "snr2": snr2}
 
 
 def _subpixel_refine(F: np.ndarray, r: int, c: int, cy: int, cx: int) -> dict:
@@ -464,7 +471,7 @@ def _assign_warp_weft(p1: dict, p2: dict) -> tuple[dict, dict]:
 # §7.5 Irregularity (FWHM of the radial peak profile)
 # ---------------------------------------------------------------------------
 
-def _measure_irregularity(F: np.ndarray, peak: dict, N: int) -> dict:
+def _measure_irregularity(F: np.ndarray, peak: dict, N: int, fwhm0: float = 2.00) -> dict:
     """
     Measure FWHM of the radial profile through the peak.
     Returns: irregularity (= FWHM/k), energy_concentration.
@@ -507,9 +514,8 @@ def _measure_irregularity(F: np.ndarray, peak: dict, N: int) -> dict:
     # Convert from sample index (0.5 px steps) to frequency units (k-space)
     fwhm_k = fwhm_samples * (2 * k / max(n_samples - 1, 1))
 
-    # Instrument-limited theoretical Hann window peak width (FWHM0 ≈ 2.00 frequency cycles)
+    # Instrument-limited peak width (FWHM0 from config, default 2.00)
     # Subtract in quadrature so perfect synthetic weaves yield ~0 irregularity
-    fwhm0 = 2.00
     fwhm_excess = math.sqrt(max(fwhm_k ** 2 - fwhm0 ** 2, 0.0))
     irregularity = fwhm_excess / (k + 1e-9)
 
@@ -588,7 +594,8 @@ def _detect_defects(
     sigma_k = defect_cfg["residual_sigma_k"]
     mad = float(np.median(np.abs(res_c)))
     robust_sigma = 1.4826 * mad
-    threshold = max(sigma_k * robust_sigma, 0.04)
+    threshold_floor = float(defect_cfg.get("threshold_floor", 0.04))
+    threshold = max(sigma_k * robust_sigma, threshold_floor)
 
     binary = (np.abs(res_c) > threshold).astype(np.uint8)
 

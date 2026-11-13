@@ -3,9 +3,9 @@ engine/match.py
 Fingerprint matching module implementing §7.9 of TANTSAAKSHI_ENGINE_SPEC.md.
 
 Compares two fabric fingerprints using dual complementary methods:
-  1. Residual method: 2D phase correlation & masked cross-correlation across small rotation search (-3°..+3°).
-  2. SIFT method: L2 nearest-neighbour, Lowe ratio test (0.75), and RANSAC partial affine verification.
-     Impostor coincidences are rejected if scale change > 8% or rotation > 6°.
+  1. Residual method: 2D phase correlation & masked normalized cross-correlation across small rotation search (-3°..+3°).
+  2. SIFT method: L2 nearest-neighbour, Lowe ratio test (0.80), and RANSAC partial affine verification.
+     Impostor coincidences are rejected if scale change > 10% or rotation > 8°.
 
 Decision logic:
   - If thresholds in config are null, returns match: None, calibrated: False. Never fakes a decision.
@@ -49,7 +49,7 @@ def match_residuals(
     Returns
     -------
     best_ncc : float, masked normalized cross correlation [-1, 1]
-    best_pce : float, peak-to-correlation energy
+    best_resp : float, phaseCorrelate peak response
     best_shift : tuple (dx, dy)
     best_rotation : float in degrees
     """
@@ -57,7 +57,7 @@ def match_residuals(
     hann = cv2.createHanningWindow((W, H), cv2.CV_64F)
 
     best_ncc = -1.0
-    best_pce = 0.0
+    best_resp = 0.0
     best_shift = (0.0, 0.0)
     best_rot = 0.0
 
@@ -110,8 +110,8 @@ def match_residuals(
             borderValue=1,
         ) > 0
 
-        # Mask: exclude border margin (20 px) and glare pixels from BOTH images
-        border = 20
+        # Mask: exclude border margin (15 px at 10 px/mm = 1.5 mm) and glare pixels
+        border = 15
         valid = np.ones((H, W), dtype=bool)
         valid[:border, :] = False
         valid[-border:, :] = False
@@ -119,7 +119,7 @@ def match_residuals(
         valid[:, -border:] = False
         valid = valid & (~glare_a) & (~shifted_glare_b)
 
-        if np.sum(valid) > 1000:
+        if np.sum(valid) > 200:
             v_a = res_a[valid]
             v_b = shifted_b[valid]
             std_a = np.std(v_a)
@@ -131,16 +131,13 @@ def match_residuals(
         else:
             ncc = 0.0
 
-        # PCE: Peak-to-Correlation Energy proxy
-        pce = float(phase_resp * 100.0)
-
         if ncc > best_ncc:
             best_ncc = ncc
-            best_pce = pce
+            best_resp = float(phase_resp)
             best_shift = (float(dx), float(dy))
             best_rot = float(rot_deg)
 
-    return float(best_ncc), float(best_pce), best_shift, best_rot
+    return float(best_ncc), float(best_resp), best_shift, best_rot
 
 
 def match_sift_descriptors(
@@ -148,10 +145,10 @@ def match_sift_descriptors(
     desc_a: np.ndarray,
     pts_b: np.ndarray,
     desc_b: np.ndarray,
-    ratio_test: float = 0.75,
+    ratio_test: float = 0.80,
     ransac_reproj_px: float = 3.0,
-    max_scale_change: float = 0.08,
-    max_rotation_deg: float = 6.0,
+    max_scale_change: float = 0.10,
+    max_rotation_deg: float = 8.0,
 ) -> tuple[int, float, float, int]:
     """
     Match SIFT keypoints & descriptors using Lowe's ratio test and partial affine RANSAC.
@@ -244,7 +241,7 @@ def match_fingerprints(
 
     score_residual = None
     inliers = None
-    pce = 0.0
+    phase_resp = 0.0
     best_shift = (0.0, 0.0)
     best_rot = 0.0
     scale_change = 0.0
@@ -260,7 +257,7 @@ def match_fingerprints(
         r_b = data_b["residual"].astype(np.float32)
         g_b = data_b["glare_mask"].astype(bool)
 
-        ncc, pce, best_shift, best_rot = match_residuals(r_a, g_a, r_b, g_b)
+        ncc, phase_resp, best_shift, best_rot = match_residuals(r_a, g_a, r_b, g_b)
         score_residual = float(ncc)
 
     # 2. SIFT matching
@@ -277,10 +274,10 @@ def match_fingerprints(
             desc_a=desc_a,
             pts_b=pts_b,
             desc_b=desc_b,
-            ratio_test=float(fp_cfg.get("ratio_test", 0.75)),
+            ratio_test=float(fp_cfg.get("ratio_test", 0.80)),
             ransac_reproj_px=float(fp_cfg.get("ransac_reproj_px", 3.0)),
-            max_scale_change=float(fp_cfg.get("max_scale_change", 0.08)),
-            max_rotation_deg=float(fp_cfg.get("max_rotation_deg", 6.0)),
+            max_scale_change=float(fp_cfg.get("max_scale_change", 0.10)),
+            max_rotation_deg=float(fp_cfg.get("max_rotation_deg", 8.0)),
         )
         inliers = int(inl)
 
@@ -314,7 +311,7 @@ def match_fingerprints(
         "details": {
             "best_shift": [float(best_shift[0]), float(best_shift[1])],
             "best_rotation_deg": float(best_rot),
-            "pce": float(pce),
+            "phase_response": float(phase_resp),
             "sift_scale_change": float(scale_change),
             "sift_rotation_deg": float(sift_rot),
             "sift_good_matches": int(total_good),
