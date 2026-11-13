@@ -281,25 +281,17 @@ def match_fingerprints(
         )
         inliers = int(inl)
 
-    # Decision logic based on config thresholds
+    # Decision logic based on config thresholds:
+    # SIFT inliers is diagnostic only (Item 1). Decision uses only residual NCC threshold.
     thresh_residual = fp_cfg.get("match_threshold_residual")
-    thresh_inliers = fp_cfg.get("match_threshold_inliers")
-
-    calibrated = (thresh_residual is not None) and (thresh_inliers is not None)
+    calibrated = (thresh_residual is not None)
 
     match_decision = None
-    if calibrated:
-        res_pass = (score_residual is not None and score_residual >= float(thresh_residual))
-        inl_pass = (inliers is not None and inliers >= int(thresh_inliers))
-        if method == "residual":
-            match_decision = res_pass
-        elif method == "sift":
-            match_decision = inl_pass
-        else:  # "both"
-            match_decision = (res_pass and inl_pass)
+    if calibrated and score_residual is not None:
+        match_decision = bool(score_residual >= float(thresh_residual))
 
-    # Primary score reporting
-    primary_score = float(score_residual if score_residual is not None else (inliers or 0.0))
+    # Primary score reporting is the residual NCC
+    primary_score = float(score_residual if score_residual is not None else 0.0)
 
     return {
         "match": match_decision,
@@ -307,8 +299,9 @@ def match_fingerprints(
         "score_residual": score_residual,
         "inliers": inliers,
         "score": primary_score,
-        "method": method,
+        "method": "residual",
         "details": {
+            "sift_inliers": inliers,
             "best_shift": [float(best_shift[0]), float(best_shift[1])],
             "best_rotation_deg": float(best_rot),
             "phase_response": float(phase_resp),

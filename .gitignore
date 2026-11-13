@@ -12,3 +12,5 @@ __pycache__/
 # Sample temporary outputs
 eval/sample_output/*.npz
 eval/sample_output/debug/
+eval/reports/**/fp_cache/
+eval/reports/**/tmp_an/

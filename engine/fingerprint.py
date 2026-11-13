@@ -202,8 +202,8 @@ def extract_fingerprint(
 
         for it in items:
             raw = _ensure_loaded_image(it)
-            if raw.ndim == 2 and raw.shape[0] < 1200:
-                # Pre-rectified window frame
+            if isinstance(raw, np.ndarray) and raw.ndim == 2 and raw.shape[0] < 1200:
+                # Pre-rectified window float/uint8 2D array
                 w_f32 = raw.astype(np.float32) / (255.0 if raw.dtype == np.uint8 else 1.0)
                 rect_windows.append(w_f32)
             else:
@@ -211,6 +211,15 @@ def extract_fingerprint(
                 if card_res["ok"]:
                     passing_cards.append(card_res)
                     raw_burst.append(raw)
+                else:
+                    # If card detection failed, check if image is already a cropped window (e.g. from master-fabric renderer)
+                    if raw.ndim == 3:
+                        raw_gray = cv2.cvtColor(raw, cv2.COLOR_BGR2GRAY)
+                    else:
+                        raw_gray = raw
+                    if raw_gray.shape[0] <= 1000 and raw_gray.shape[1] <= 1000:
+                        w_f32 = raw_gray.astype(np.float32) / (255.0 if raw_gray.dtype == np.uint8 else 1.0)
+                        rect_windows.append(w_f32)
 
         if not rect_windows and not passing_cards:
             raise ValueError("Could not rectify any card window for fingerprint extraction")

@@ -50,7 +50,7 @@ fft:
   peak_exclusion_deg: 25
   expect_perpendicular_tol_deg: 15
   flatfield_sigma_px: 25.0
-  fwhm0: 2.00                    # Instrument-limited peak width at actual window N
+  fwhm0: 2.25                    # Instrument-limited peak width at actual window N (calibrated)
 
 defects:
   notch_radius: 3
@@ -66,7 +66,7 @@ grade:                            # PROVISIONAL — to be agreed with the cooper
   # else C
 
 fingerprint:
-  method: both                    # residual | sift | both
+  method: residual                # residual (SIFT kept in details as diagnostic only)
   scale_px_per_mm: 10.0           # fixed low scale (robust to phone blur and sensor noise)
   min_feature_mm: 0.5             # slub scale band-pass: minimum feature size in mm
   max_feature_mm: 5.0             # slub scale band-pass: maximum feature size in mm

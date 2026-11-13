@@ -295,15 +295,72 @@ def test_uncalibrated_thresholds_return_none(cfg, tmp_path):
     assert res["inliers"] is not None
 
 
+def test_card_shift_2mm_diagonal(cfg, tmp_path):
+    """
+    Item 4: Card shift 2 mm diagonal (the weakest case: genuine NCC min 0.33).
+    Must achieve genuine NCC >= 0.33 and clear separation over impostor.
+    """
+    master_scale = 60.0
+    spec_master_a = FabricSpec(
+        ends_per_inch=68,
+        picks_per_inch=68,
+        px_per_mm=master_scale,
+        window_mm=28.0,
+        slub_amplitude=0.25,
+        irregularity_jitter=0.07,
+        hairiness_sigma=0.06,
+        seed=101,
+    )
+    master_a, _ = make_fabric(spec_master_a)
+
+    spec_master_b = FabricSpec(
+        ends_per_inch=68,
+        picks_per_inch=68,
+        px_per_mm=master_scale,
+        window_mm=28.0,
+        slub_amplitude=0.25,
+        irregularity_jitter=0.07,
+        hairiness_sigma=0.06,
+        seed=999,
+    )
+    master_b, _ = make_fabric(spec_master_b)
+
+    out_base = tmp_path / "fp_diag"
+    out_base.mkdir()
+
+    p_reg = _render_phone_photo(master_a, master_scale, phone_px_per_mm=30.0, shift_mm=(0.0, 0.0), rotation_deg=0.0, seed=1)
+    fp_reg = extract_fingerprint(p_reg, out_dir=str(out_base / "reg"), cfg=cfg, prefix="reg", px_per_mm=30.0)
+
+    # 2 mm diagonal shift (dx = 2.0 mm, dy = 2.0 mm)
+    p_diag = _render_phone_photo(master_a, master_scale, phone_px_per_mm=30.0, shift_mm=(2.0, 2.0), rotation_deg=0.0, seed=2)
+    fp_diag = extract_fingerprint(p_diag, out_dir=str(out_base / "diag"), cfg=cfg, prefix="diag", px_per_mm=30.0)
+
+    res_diag = match_fingerprints(fp_reg, fp_diag, cfg=cfg)
+    score_gen = res_diag["score_residual"]
+
+    assert score_gen is not None
+    assert score_gen >= 0.33, f"Genuine 2 mm diagonal shift NCC {score_gen:.4f} < 0.33"
+
+    # Impostor on same diagonal condition
+    p_imp = _render_phone_photo(master_b, master_scale, phone_px_per_mm=30.0, shift_mm=(2.0, 2.0), rotation_deg=0.0, seed=3)
+    fp_imp = extract_fingerprint(p_imp, out_dir=str(out_base / "imp"), cfg=cfg, prefix="imp", px_per_mm=30.0)
+
+    res_imp = match_fingerprints(fp_reg, fp_imp, cfg=cfg)
+    score_imp = res_imp["score_residual"]
+    assert score_imp is not None
+    assert score_gen - score_imp > 0.40, f"Separation margin {score_gen - score_imp:.4f} too small"
+
+
 def test_calibrated_decision_thresholds(cfg, tmp_path):
     """
-    When valid calibrated thresholds are supplied, match() returns definitive bool.
+    When valid calibrated residual threshold is supplied, match() returns definitive bool.
+    Decision uses only residual NCC threshold (Item 1). SIFT is kept for diagnostic only.
     """
     cfg_calibrated = dict(cfg)
     cfg_calibrated["fingerprint"] = dict(
         cfg["fingerprint"],
         match_threshold_residual=0.60,
-        match_threshold_inliers=30,
+        match_threshold_inliers=None,
     )
 
     spec = FabricSpec(

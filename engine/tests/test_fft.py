@@ -430,8 +430,36 @@ def test_realistic_yarn_physics(cfg):
 
 
 # ---------------------------------------------------------------------------
-# TC-11: Irregularity Monotonicity
+# TC-11: Irregularity Monotonicity & Instrument Floor
 # ---------------------------------------------------------------------------
+
+def test_perfect_weave_irregularity_below_threshold(cfg):
+    """
+    Item 3: A mathematically perfect synthetic weave at the pipeline's actual
+    window size (19.0 mm window) must yield irregularity < 0.005.
+    """
+    for scale in [40.0, 30.0]:
+        spec = FabricSpec(
+            ends_per_inch=65,
+            picks_per_inch=65,
+            px_per_mm=scale,
+            window_mm=19.0,
+            noise_sigma=0.0,
+            hairiness_sigma=0.0,
+            slub_amplitude=0.0,
+            irregularity_jitter=0.0,
+            uneven_lighting=False,
+            gaussian_blur_sigma=0.0,
+        )
+        result, _ = _run(spec, cfg)
+        assert result["ok"]
+        assert result["irregularity"]["warp"] < 0.005, (
+            f"Scale {scale}: warp irregularity {result['irregularity']['warp']:.5f} >= 0.005"
+        )
+        assert result["irregularity"]["weft"] < 0.005, (
+            f"Scale {scale}: weft irregularity {result['irregularity']['weft']:.5f} >= 0.005"
+        )
+
 
 def test_irregularity_monotonicity(cfg):
     """
