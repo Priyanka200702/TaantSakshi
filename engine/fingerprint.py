@@ -180,72 +180,53 @@ def extract_fingerprint(
     fp_cfg = cfg["fingerprint"]
     rect_cfg = cfg["rectify"]
 
-    # Target low scale: 10 px/mm (below any phone camera native resolution)
+def extract_fingerprint_from_window(
+    window: np.ndarray,
+    px_per_mm: float,
+    out_dir: str,
+    cfg: dict[str, Any] | None = None,
+    prefix: str = "fabric",
+) -> dict[str, Any]:
+    """
+    Extract fabric fingerprint from a pre-rectified 2D window array.
+    Used internally by analyze() and in unit tests/eval scripts.
+
+    Parameters
+    ----------
+    window : np.ndarray
+        2D float32 [0, 1] or uint8 array of the rectified window.
+    px_per_mm : float
+        Spatial resolution in pixels per mm of `window`.
+    out_dir : str
+        Directory to save .npz artifacts.
+    cfg : dict, optional
+        Engine configuration dictionary.
+    prefix : str
+        Filename prefix for .npz outputs.
+
+    Returns
+    -------
+    dict with keys 'residual_path' and 'sift_path'
+    """
+    if cfg is None:
+        cfg = get_config()
+
+    fp_cfg = cfg["fingerprint"]
+    rect_cfg = cfg["rectify"]
+
     target_scale = float(fp_cfg.get("scale_px_per_mm", rect_cfg.get("fingerprint_px_per_mm", 10.0)))
+    effective_scale = float(px_per_mm)
 
-    # 1. Determine input mode: direct window array or raw photo burst
-    if isinstance(image_paths_or_arrays, np.ndarray) and image_paths_or_arrays.ndim == 2:
-        effective_scale = px_per_mm or target_scale
-        if effective_scale < target_scale:
-            raise ValueError(f"LOW_RES_FINGERPRINT: native resolution {effective_scale:.1f} < target {target_scale:.1f} px/mm")
-        stacked_window = image_paths_or_arrays.astype(np.float32)
-        if stacked_window.max() > 1.0:
-            stacked_window /= 255.0
-    else:
-        items = image_paths_or_arrays if isinstance(image_paths_or_arrays, list) else [image_paths_or_arrays]
-        if not items:
-            raise ValueError("No images provided for fingerprint extraction")
+    if effective_scale < target_scale:
+        raise ValueError(
+            f"LOW_RES_FINGERPRINT: native resolution {effective_scale:.1f} < target {target_scale:.1f} px/mm"
+        )
 
-        rect_windows: list[np.ndarray] = []
-        passing_cards = []
-        raw_burst = []
+    stacked_window = window.astype(np.float32)
+    if stacked_window.max() > 1.0:
+        stacked_window /= 255.0
 
-        for it in items:
-            raw = _ensure_loaded_image(it)
-            if isinstance(raw, np.ndarray) and raw.ndim == 2 and raw.shape[0] < 1200:
-                # Pre-rectified window float/uint8 2D array
-                w_f32 = raw.astype(np.float32) / (255.0 if raw.dtype == np.uint8 else 1.0)
-                rect_windows.append(w_f32)
-            else:
-                card_res = detect_and_rectify(raw, cfg)
-                if card_res["ok"]:
-                    passing_cards.append(card_res)
-                    raw_burst.append(raw)
-                else:
-                    # If card detection failed, check if image is already a cropped window (e.g. from master-fabric renderer)
-                    if raw.ndim == 3:
-                        raw_gray = cv2.cvtColor(raw, cv2.COLOR_BGR2GRAY)
-                    else:
-                        raw_gray = raw
-                    if raw_gray.shape[0] <= 1000 and raw_gray.shape[1] <= 1000:
-                        w_f32 = raw_gray.astype(np.float32) / (255.0 if raw_gray.dtype == np.uint8 else 1.0)
-                        rect_windows.append(w_f32)
-
-        if not rect_windows and not passing_cards:
-            raise ValueError("Could not rectify any card window for fingerprint extraction")
-
-        if passing_cards:
-            min_native = min(float(c.get("native_px_per_mm", 0.0)) for c in passing_cards)
-            if min_native < target_scale:
-                raise ValueError(
-                    f"LOW_RES_FINGERPRINT: native resolution {min_native:.1f} < target {target_scale:.1f} px/mm"
-                )
-            canonical_scale = float(cfg["rectify"]["canonical_px_per_mm"])
-            common_scale = min(min_native, canonical_scale)
-            for raw in raw_burst:
-                c_rect = detect_and_rectify(raw, cfg, target_px_per_mm=common_scale)
-                if c_rect["ok"] and c_rect["window_gray"] is not None:
-                    rect_windows.append(c_rect["window_gray"])
-            effective_scale = common_scale
-        else:
-            effective_scale = px_per_mm or target_scale
-
-        if len(rect_windows) > 1:
-            stacked_window, _ = stack_burst_frames(rect_windows, top_k=int(cfg["enhance"]["stack_top_k"]))
-        else:
-            stacked_window = rect_windows[0]
-
-    # Glare detection on raw window before any modification
+    # 1. Glare detection
     sat_level = int(cfg["quality"]["saturation_level"])
     _, raw_glare_mask, _ = mask_glare(stacked_window, saturation_level=sat_level)
 
@@ -294,7 +275,7 @@ def extract_fingerprint(
     res_std = float(np.std(crop_res))
     crop_res = (crop_res - res_mean) / (res_std + 1e-6)
 
-    # 7. SIFT extraction on slub residual
+    # 7. SIFT extraction on slub residual (diagnostic only)
     n_features = int(fp_cfg.get("sift_nfeatures", 500))
     sift = cv2.SIFT_create(nfeatures=n_features, contrastThreshold=0.02)
     u8_res = (np.clip((crop_res + 2.5) / 5.0, 0.0, 1.0) * 255.0).astype(np.uint8)
@@ -341,3 +322,65 @@ def extract_fingerprint(
         "residual_path": str(residual_path),
         "sift_path": str(sift_path),
     }
+
+
+def extract_fingerprint(
+    image_paths_or_arrays: list[str | np.ndarray] | np.ndarray | str,
+    out_dir: str,
+    cfg: dict[str, Any] | None = None,
+    prefix: str = "fabric",
+) -> dict[str, Any]:
+    """
+    Production fingerprint extraction from full camera photos (§7.8).
+    Strictly requires card marker detection. If no card is detected, fails with NO_CARD.
+    """
+    if cfg is None:
+        cfg = get_config()
+
+    fp_cfg = cfg["fingerprint"]
+    rect_cfg = cfg["rectify"]
+    target_scale = float(fp_cfg.get("scale_px_per_mm", rect_cfg.get("fingerprint_px_per_mm", 10.0)))
+
+    items = image_paths_or_arrays if isinstance(image_paths_or_arrays, list) else [image_paths_or_arrays]
+    if not items:
+        raise ValueError("No images provided for fingerprint extraction")
+
+    rect_windows: list[np.ndarray] = []
+    passing_cards = []
+    raw_burst = []
+
+    for it in items:
+        raw = _ensure_loaded_image(it)
+        card_res = detect_and_rectify(raw, cfg)
+        if card_res["ok"]:
+            passing_cards.append(card_res)
+            raw_burst.append(raw)
+
+    if not passing_cards:
+        raise ValueError("NO_CARD: Marker card detection failed on all frames")
+
+    min_native = min(float(c.get("native_px_per_mm", 0.0)) for c in passing_cards)
+    if min_native < target_scale:
+        raise ValueError(
+            f"LOW_RES_FINGERPRINT: native resolution {min_native:.1f} < target {target_scale:.1f} px/mm"
+        )
+
+    canonical_scale = float(cfg["rectify"]["canonical_px_per_mm"])
+    common_scale = min(min_native, canonical_scale)
+    for raw in raw_burst:
+        c_rect = detect_and_rectify(raw, cfg, target_px_per_mm=common_scale)
+        if c_rect["ok"] and c_rect["window_gray"] is not None:
+            rect_windows.append(c_rect["window_gray"])
+
+    if len(rect_windows) > 1:
+        stacked_window, _ = stack_burst_frames(rect_windows, top_k=int(cfg["enhance"]["stack_top_k"]))
+    else:
+        stacked_window = rect_windows[0]
+
+    return extract_fingerprint_from_window(
+        window=stacked_window,
+        px_per_mm=common_scale,
+        out_dir=out_dir,
+        cfg=cfg,
+        prefix=prefix,
+    )

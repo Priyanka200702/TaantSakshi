@@ -45,13 +45,15 @@ from engine.config import get_config
 from engine.fingerprint import extract_fingerprint
 from engine.match import match_fingerprints
 from engine.tests.test_fingerprint import _render_phone_photo
-from tools.synth_fabric import FabricSpec, make_fabric
+from tools.synth_fabric import FabricSpec, make_fabric, make_card_scene, to_uint8
 
 
-def generate_synthetic_fingerprint_dataset(target_dir: Path, n_sarees: int = 5) -> dict[str, list[dict]]:
+def generate_synthetic_fingerprint_dataset(target_dir: Path, n_sarees: int = 5) -> list[dict]:
     """
-    Generate synthetic photo dataset from independent master fabrics
-    covering all capture conditions.
+    Generate synthetic photo dataset of full card-scene photographs
+    from independent master fabrics covering all capture conditions.
+    Full card scenes include 4 ArUco markers, white card border, window,
+    and perspective tilt (§9.4).
     """
     target_dir.mkdir(parents=True, exist_ok=True)
     dir_gen = target_dir / "genuine"
@@ -63,21 +65,22 @@ def generate_synthetic_fingerprint_dataset(target_dir: Path, n_sarees: int = 5) 
     cfg = get_config()
 
     conditions = [
-        ("base", (0.0, 0.0), 0.0, 30.0, 0.8, 1),
-        ("refold", (0.5, 0.3), 1.0, 30.0, 0.8, 2),
-        ("light", (0.0, 0.0), 0.0, 30.0, 0.9, 3),
-        ("phone2", (0.0, 0.0), 0.0, 22.0, 1.0, 4),
-        ("phone3", (0.0, 0.0), 0.0, 38.0, 0.6, 5),
-        ("offset1mm", (1.0, 0.0), 0.0, 30.0, 0.8, 6),
-        ("offset2mm", (2.0, 0.0), 0.0, 30.0, 0.8, 7),
-        ("offset2mm_diag", (2.0, 2.0), 0.0, 30.0, 0.8, 8),
-        ("offset3mm", (3.0, 0.0), 0.0, 30.0, 0.8, 9),
-        ("rot5deg", (0.0, 0.0), 5.0, 30.0, 0.8, 10),
-        ("rot10deg", (0.0, 0.0), 10.0, 30.0, 0.8, 11),
+        ("base", (0.0, 0.0), 0.0, 30.0, 0.8, 0.0, 1),
+        ("refold", (0.5, 0.3), 1.0, 30.0, 0.8, 2.0, 2),
+        ("light", (0.0, 0.0), 0.0, 30.0, 0.9, 0.0, 3),
+        ("phone2", (0.0, 0.0), 0.0, 22.0, 1.0, 4.0, 4),
+        ("phone3", (0.0, 0.0), 0.0, 38.0, 0.6, 2.0, 5),
+        ("offset1mm", (1.0, 0.0), 0.0, 30.0, 0.8, 0.0, 6),
+        ("offset2mm", (2.0, 0.0), 0.0, 30.0, 0.8, 0.0, 7),
+        ("offset2mm_diag", (2.0, 2.0), 0.0, 30.0, 0.8, 0.0, 8),
+        ("offset3mm", (3.0, 0.0), 0.0, 30.0, 0.8, 0.0, 9),
+        ("rot5deg", (0.0, 0.0), 5.0, 30.0, 0.8, 0.0, 10),
+        ("rot10deg", (0.0, 0.0), 10.0, 30.0, 0.8, 0.0, 11),
+        ("shift2mm_rot10deg", (2.0, 2.0), 10.0, 26.0, 1.0, 4.0, 12),
     ]
 
     items = []
-    print(f"[eval_fingerprint] Generating synthetic fabric dataset for {n_sarees} sarees...")
+    print(f"[eval_fingerprint] Generating synthetic full card-scene dataset for {n_sarees} sarees...")
 
     for s_idx in range(n_sarees):
         sid = f"saree{s_idx + 1:02d}"
@@ -94,9 +97,9 @@ def generate_synthetic_fingerprint_dataset(target_dir: Path, n_sarees: int = 5) 
         )
         master_img, _ = make_fabric(spec_m)
 
-        for cond, shift, rot, scale, blur, shot in conditions:
+        for cond, shift, rot, scale, blur, tilt, shot in conditions:
             seed_p = seed_m + shot * 10
-            photo = _render_phone_photo(
+            patch = _render_phone_photo(
                 master_img,
                 master_px_per_mm=master_scale,
                 phone_px_per_mm=scale,
@@ -104,11 +107,20 @@ def generate_synthetic_fingerprint_dataset(target_dir: Path, n_sarees: int = 5) 
                 rotation_deg=rot,
                 blur_sigma_px=blur,
                 seed=seed_p,
+                window_mm=20.0,
+            )
+            scene, _ = make_card_scene(
+                spec=spec_m,
+                cfg=cfg,
+                tilt_deg=tilt,
+                camera_px_per_mm=scale,
+                seed=seed_p,
+                fabric_patch=patch,
             )
             phone_tag = f"phone{int(scale)}"
             fname = f"{sid}_{phone_tag}_{cond}_shot{shot}.jpg"
             out_p = dir_gen / fname
-            cv2.imwrite(str(out_p), (photo * 255).astype(np.uint8))
+            cv2.imwrite(str(out_p), to_uint8(scene))
             items.append({
                 "path": str(out_p),
                 "saree_id": sid,
@@ -118,8 +130,8 @@ def generate_synthetic_fingerprint_dataset(target_dir: Path, n_sarees: int = 5) 
                 "scale": scale,
             })
 
-    # Also populate impostor directory with 1 sample per extra impostor saree
-    for imp_idx in range(n_sarees, n_sarees + 5):
+    # Populate impostor directory with independent impostor sarees
+    for imp_idx in range(n_sarees, n_sarees + 6):
         sid = f"impostor{imp_idx + 1:02d}"
         seed_m = 9000 + imp_idx * 137
         spec_m = FabricSpec(
@@ -133,10 +145,24 @@ def generate_synthetic_fingerprint_dataset(target_dir: Path, n_sarees: int = 5) 
             seed=seed_m,
         )
         master_img, _ = make_fabric(spec_m)
-        photo = _render_phone_photo(master_img, master_scale, phone_px_per_mm=30.0, seed=seed_m)
+        patch = _render_phone_photo(
+            master_img,
+            master_scale,
+            phone_px_per_mm=30.0,
+            seed=seed_m,
+            window_mm=20.0,
+        )
+        scene, _ = make_card_scene(
+            spec=spec_m,
+            cfg=cfg,
+            tilt_deg=2.0,
+            camera_px_per_mm=30.0,
+            seed=seed_m,
+            fabric_patch=patch,
+        )
         fname = f"{sid}_phone30_shot1.jpg"
         out_p = dir_imp / fname
-        cv2.imwrite(str(out_p), (photo * 255).astype(np.uint8))
+        cv2.imwrite(str(out_p), to_uint8(scene))
         items.append({
             "path": str(out_p),
             "saree_id": sid,
@@ -217,7 +243,6 @@ def run_fingerprint_evaluation(
                 out_dir=str(fp_cache_dir),
                 cfg=cfg,
                 prefix=prefix,
-                px_per_mm=item.get("scale"),
             )
             fingerprints.append({**item, "fp": fp})
         except Exception as e:
@@ -300,17 +325,24 @@ def run_fingerprint_evaluation(
     eer_thresh = float(thresholds[eer_idx])
     eer_val = float((far_arr[eer_idx] + frr_arr[eer_idx]) / 2.0)
 
+    min_gen = float(np.min(gen_scores))
+    max_imp = float(np.max(imp_scores))
+    separation_margin = min_gen - max_imp
+
     # Recommended decision threshold:
-    # Selected where FAR = 0.0% (zero impostor false acceptance) with high genuine acceptance
-    zero_far_indices = np.where(far_arr == 0.0)[0]
-    if len(zero_far_indices) > 0:
-        rec_idx = zero_far_indices[0]  # lowest threshold that gives FAR = 0
-        rec_thresh = float(thresholds[rec_idx])
+    # Selected within the separation margin (NEVER equal to impostor maximum).
+    # Provides balanced buffer above impostor max and below genuine min.
+    if separation_margin > 0.05:
+        rec_thresh = float(np.round(max_imp + 0.45 * separation_margin, 2))
+    elif separation_margin > 0.0:
+        rec_thresh = float(np.round((min_gen + max_imp) / 2.0, 3))
     else:
         rec_thresh = eer_thresh
 
     rec_far = float(np.mean(imp_scores >= rec_thresh)) * 100.0
     rec_frr = float(np.mean(gen_scores < rec_thresh)) * 100.0
+    buffer_from_imp = rec_thresh - max_imp
+    buffer_to_gen = min_gen - rec_thresh
 
     # Condition Breakdown Table
     cond_stats = {}
@@ -402,15 +434,17 @@ def run_fingerprint_evaluation(
         f.write(f"- **Evaluation Date:** {datetime.date.today().isoformat()}\n")
         f.write(f"- **Total Genuine Pairs:** {len(gen_scores)}\n")
         f.write(f"- **Total Impostor Pairs:** {len(imp_scores)}\n")
-        f.write(f"- **Genuine NCC Range:** `[{float(np.min(gen_scores)):.4f}, {float(np.max(gen_scores)):.4f}]` (Mean: `{float(np.mean(gen_scores)):.4f}`)\n")
-        f.write(f"- **Impostor NCC Range:** `[{float(np.min(imp_scores)):.4f}, {float(np.max(imp_scores)):.4f}]` (Mean: `{float(np.mean(imp_scores)):.4f}`)\n")
+        f.write(f"- **Genuine NCC Range:** `[{min_gen:.4f}, {float(np.max(gen_scores)):.4f}]` (Mean: `{float(np.mean(gen_scores)):.4f}`)\n")
+        f.write(f"- **Impostor NCC Range:** `[{float(np.min(imp_scores)):.4f}, {max_imp:.4f}]` (Mean: `{float(np.mean(imp_scores)):.4f}`)\n")
+        f.write(f"- **Separation Margin (Genuine Min − Impostor Max):** `{separation_margin:.4f}`\n")
         f.write(f"- **Equal Error Rate (EER):** `{eer_val * 100.0:.2f}%` (at threshold `{eer_thresh:.3f}`)\n\n")
 
         f.write("## Recommended Decision Threshold\n\n")
         f.write(f"> [!IMPORTANT]\n")
         f.write(f"> **Recommended NCC Threshold:** `match_threshold_residual: {rec_thresh:.2f}`\n")
-        f.write(f"> - **At this threshold:** False Accept Rate (FAR) = `{rec_far:.2f}%`, False Reject Rate (FRR) = `{rec_frr:.2f}%`.\n")
-        f.write(f"> - **NOTE:** As per protocol, do NOT write this into `config.yaml` until real field photos are verified.\n\n")
+        f.write(f"> - **Margin to Impostor Max:** `+{buffer_from_imp:.4f}` above `{max_imp:.4f}` (Zero False Accepts: FAR = `{rec_far:.2f}%`)\n")
+        f.write(f"> - **Margin to Genuine Min:** `+{buffer_to_gen:.4f}` below `{min_gen:.4f}` (Zero False Rejects: FRR = `{rec_frr:.2f}%`)\n")
+        f.write(f"> - **NOTE:** Per protocol, this recommended threshold is reported here for Gate A calibration but kept `null` in `config.yaml` until real field saree photos are evaluated.\n\n")
 
         f.write("## Condition Breakdown\n\n")
         f.write("| Condition | N Pairs | Mean NCC | Min NCC | Max NCC | FRR @ Rec Thresh |\n")

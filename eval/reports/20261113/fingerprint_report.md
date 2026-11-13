@@ -4,33 +4,36 @@
 > **synthetic validation only — not real-world accuracy**
 
 - **Evaluation Date:** 2026-11-13
-- **Total Genuine Pairs:** 165
-- **Total Impostor Pairs:** 538
-- **Genuine NCC Range:** `[0.6978, 0.8500]` (Mean: `0.7796`)
-- **Impostor NCC Range:** `[-0.0023, 0.2780]` (Mean: `0.0619`)
-- **Equal Error Rate (EER):** `0.00%` (at threshold `0.279`)
+- **Total Genuine Pairs:** 330
+- **Total Impostor Pairs:** 1000
+- **Genuine NCC Range:** `[0.5855, 0.7897]` (Mean: `0.7036`)
+- **Impostor NCC Range:** `[-0.0079, 0.1945]` (Mean: `0.0621`)
+- **Separation Margin (Genuine Min − Impostor Max):** `0.3911`
+- **Equal Error Rate (EER):** `0.00%` (at threshold `0.195`)
 
 ## Recommended Decision Threshold
 
 > [!IMPORTANT]
-> **Recommended NCC Threshold:** `match_threshold_residual: 0.28`
-> - **At this threshold:** False Accept Rate (FAR) = `0.00%`, False Reject Rate (FRR) = `0.00%`.
-> - **NOTE:** As per protocol, do NOT write this into `config.yaml` until real field photos are verified.
+> **Recommended NCC Threshold:** `match_threshold_residual: 0.37`
+> - **Margin to Impostor Max:** `+0.1755` above `0.1945` (Zero False Accepts: FAR = `0.00%`)
+> - **Margin to Genuine Min:** `+0.2155` below `0.5855` (Zero False Rejects: FRR = `0.00%`)
+> - **NOTE:** Per protocol, this recommended threshold is reported here for Gate A calibration but kept `null` in `config.yaml` until real field saree photos are evaluated.
 
 ## Condition Breakdown
 
 | Condition | N Pairs | Mean NCC | Min NCC | Max NCC | FRR @ Rec Thresh |
 | :--- | :---: | :---: | :---: | :---: | :---: |
-| `light` | 27 | 0.7966 | 0.7368 | 0.8500 | 0.0% |
-| `offset1mm` | 18 | 0.7862 | 0.7486 | 0.8127 | 0.0% |
-| `offset2mm` | 15 | 0.7827 | 0.7641 | 0.8048 | 0.0% |
-| `offset2mm_diag` | 12 | 0.7625 | 0.7424 | 0.7958 | 0.0% |
-| `offset3mm` | 9 | 0.7799 | 0.7629 | 0.7940 | 0.0% |
-| `phone2` | 24 | 0.7386 | 0.6978 | 0.7810 | 0.0% |
-| `phone3` | 21 | 0.8176 | 0.7726 | 0.8472 | 0.0% |
-| `refold` | 30 | 0.7668 | 0.7107 | 0.8276 | 0.0% |
-| `rot10deg` | 3 | 0.7943 | 0.7882 | 0.8046 | 0.0% |
-| `rot5deg` | 6 | 0.7954 | 0.7936 | 0.7971 | 0.0% |
+| `light` | 50 | 0.7184 | 0.6432 | 0.7795 | 0.0% |
+| `offset1mm` | 35 | 0.7089 | 0.6625 | 0.7466 | 0.0% |
+| `offset2mm` | 30 | 0.7194 | 0.6660 | 0.7497 | 0.0% |
+| `offset2mm_diag` | 25 | 0.7050 | 0.6536 | 0.7401 | 0.0% |
+| `offset3mm` | 20 | 0.7044 | 0.6610 | 0.7299 | 0.0% |
+| `phone2` | 45 | 0.6398 | 0.5855 | 0.6962 | 0.0% |
+| `phone3` | 40 | 0.7481 | 0.6875 | 0.7897 | 0.0% |
+| `refold` | 55 | 0.6946 | 0.6106 | 0.7389 | 0.0% |
+| `rot10deg` | 10 | 0.7148 | 0.6904 | 0.7471 | 0.0% |
+| `rot5deg` | 15 | 0.7105 | 0.6505 | 0.7454 | 0.0% |
+| `shift2mm_rot10deg` | 5 | 0.6872 | 0.6689 | 0.7048 | 0.0% |
 
 ## Evaluation Plots
 

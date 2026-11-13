@@ -81,7 +81,24 @@ def detect_and_rectify(
     detector_params.cornerRefinementMethod = cv2.aruco.CORNER_REFINE_SUBPIX
 
     detector = cv2.aruco.ArucoDetector(aruco_dict, detector_params)
-    corners_list, ids, _ = detector.detectMarkers(gray)
+
+    # Fast detection: downscale large images (e.g. >1500 px) for marker detection, then refine at full res
+    max_dim = max(gray.shape)
+    if max_dim > 1500:
+        scale_f = 1500.0 / float(max_dim)
+        gray_small = cv2.resize(gray, (0, 0), fx=scale_f, fy=scale_f, interpolation=cv2.INTER_AREA)
+        corners_list_small, ids, _ = detector.detectMarkers(gray_small)
+        if corners_list_small:
+            corners_list = [c / scale_f for c in corners_list_small]
+            criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.05)
+            for idx in range(len(corners_list)):
+                corners_list[idx] = cv2.cornerSubPix(
+                    gray, np.float32(corners_list[idx]), winSize=(5, 5), zeroZone=(-1, -1), criteria=criteria
+                )
+        else:
+            corners_list = []
+    else:
+        corners_list, ids, _ = detector.detectMarkers(gray)
 
     # Quality Gate 1: Check required markers
     detected_ids = [int(i) for i in ids.flatten()] if ids is not None else []

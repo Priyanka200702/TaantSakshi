@@ -303,6 +303,7 @@ def make_card_scene(
     camera_px_per_mm: float = 30.0,
     image_size: tuple[int, int] = (1600, 1600),
     seed: int = 42,
+    fabric_patch: np.ndarray | None = None,
 ) -> tuple[np.ndarray, dict[str, Any]]:
     """
     Simulate a full phone photograph showing the marker card lying on fabric.
@@ -336,29 +337,33 @@ def make_card_scene(
     win_top = int(round(win_offset_mm * scale))
     win_sz = int(round(window_mm * scale))
 
-    # Generate synthetic fabric scaled to fit the window
-    fab_spec = FabricSpec(
-        ends_per_inch=spec.ends_per_inch,
-        picks_per_inch=spec.picks_per_inch,
-        px_per_mm=scale,
-        window_mm=window_mm,
-        amplitude=spec.amplitude,
-        grid_angle_deg=spec.grid_angle_deg,
-        noise_sigma=spec.noise_sigma,
-        hairiness_sigma=spec.hairiness_sigma,
-        harmonic_amplitude=spec.harmonic_amplitude,
-        slub_amplitude=spec.slub_amplitude,
-        irregularity_jitter=spec.irregularity_jitter,
-        uneven_lighting=spec.uneven_lighting,
-        gaussian_blur_sigma=spec.gaussian_blur_sigma,
-        defect_type=spec.defect_type,
-        defect_location=spec.defect_location,
-        design_stripe_amplitude=spec.design_stripe_amplitude,
-        design_stripe_period_mm=spec.design_stripe_period_mm,
-        seed=seed,
-    )
-    fabric_img, gt = make_fabric(fab_spec)
-    fabric_res = cv2.resize(fabric_img, (win_sz, win_sz))
+    if fabric_patch is not None:
+        fabric_res = cv2.resize(fabric_patch, (win_sz, win_sz), interpolation=cv2.INTER_AREA)
+        gt = {}
+    else:
+        # Generate synthetic fabric scaled to fit the window
+        fab_spec = FabricSpec(
+            ends_per_inch=spec.ends_per_inch,
+            picks_per_inch=spec.picks_per_inch,
+            px_per_mm=scale,
+            window_mm=window_mm,
+            amplitude=spec.amplitude,
+            grid_angle_deg=spec.grid_angle_deg,
+            noise_sigma=spec.noise_sigma,
+            hairiness_sigma=spec.hairiness_sigma,
+            harmonic_amplitude=spec.harmonic_amplitude,
+            slub_amplitude=spec.slub_amplitude,
+            irregularity_jitter=spec.irregularity_jitter,
+            uneven_lighting=spec.uneven_lighting,
+            gaussian_blur_sigma=spec.gaussian_blur_sigma,
+            defect_type=spec.defect_type,
+            defect_location=spec.defect_location,
+            design_stripe_amplitude=spec.design_stripe_amplitude,
+            design_stripe_period_mm=spec.design_stripe_period_mm,
+            seed=seed,
+        )
+        fabric_img, gt = make_fabric(fab_spec)
+        fabric_res = cv2.resize(fabric_img, (win_sz, win_sz))
     plane[win_top:win_top + win_sz, win_left:win_left + win_sz] = fabric_res
 
     # Draw 4 ArUco markers at exact corner positions

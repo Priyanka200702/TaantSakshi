@@ -28,7 +28,7 @@ from engine.enhance import (
     stack_burst_frames,
 )
 from engine.fft_grade import run_fft_grade
-from engine.fingerprint import extract_fingerprint
+from engine.fingerprint import extract_fingerprint, extract_fingerprint_from_window
 from engine.match import match_fingerprints
 from engine.quality import evaluate_quality
 
@@ -230,12 +230,12 @@ def analyze(
     t0 = time.perf_counter()
     fp_prefix = Path(image_paths[0]).stem if isinstance(image_paths[0], (str, Path)) else "fp"
     try:
-        fp_result = extract_fingerprint(
-            stacked_gray,
+        fp_result = extract_fingerprint_from_window(
+            window=stacked_gray,
+            px_per_mm=common_scale,
             out_dir=out_dir,
             cfg=cfg,
             prefix=fp_prefix,
-            px_per_mm=common_scale,
         )
     except Exception as e:
         err_s = str(e)

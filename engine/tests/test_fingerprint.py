@@ -16,7 +16,7 @@ import numpy as np
 import pytest
 
 from engine.config import get_config
-from engine.fingerprint import extract_fingerprint
+from engine.fingerprint import extract_fingerprint, extract_fingerprint_from_window
 from engine.match import match_fingerprints
 from tools.synth_fabric import FabricSpec, make_fabric
 
@@ -99,7 +99,7 @@ def test_fingerprint_extraction_structure(cfg, tmp_path):
     img, _ = make_fabric(spec)
 
     out_dir = str(tmp_path / "fp_struct")
-    res_dict = extract_fingerprint(img, out_dir=out_dir, cfg=cfg, prefix="test", px_per_mm=25.0)
+    res_dict = extract_fingerprint_from_window(img, px_per_mm=25.0, out_dir=out_dir, cfg=cfg, prefix="test")
 
     assert "residual_path" in res_dict
     assert "sift_path" in res_dict
@@ -139,17 +139,17 @@ def test_fingerprint_extraction_structure(cfg, tmp_path):
 def test_never_upsample_low_res(cfg, tmp_path):
     """
     Item 3: If native resolution is below target fingerprint scale (10 px/mm),
-    extract_fingerprint must return LOW_RES_FINGERPRINT and never upsample.
+    extract_fingerprint_from_window must return LOW_RES_FINGERPRINT and never upsample.
     """
     # 8 px/mm is below the 10 px/mm fingerprint scale
     low_res_img = np.full((160, 160), 0.5, dtype=np.float32)
 
     with pytest.raises(ValueError) as excinfo:
-        extract_fingerprint(
+        extract_fingerprint_from_window(
             low_res_img,
+            px_per_mm=8.0,
             out_dir=str(tmp_path),
             cfg=cfg,
-            px_per_mm=8.0,
         )
     assert "LOW_RES_FINGERPRINT" in str(excinfo.value)
 
@@ -192,7 +192,7 @@ def test_genuine_vs_impostor_distributions_physically_consistent(cfg, tmp_path):
 
     # 1. Registration photo of Saree A (Phone 1: 30 px/mm, 0 shift, 0 rot)
     p_reg = _render_phone_photo(master_a, master_scale, phone_px_per_mm=30.0, shift_mm=(0.0, 0.0), rotation_deg=0.0, seed=1)
-    fp_reg = extract_fingerprint(p_reg, out_dir=str(out_base / "reg"), cfg=cfg, prefix="reg", px_per_mm=30.0)
+    fp_reg = extract_fingerprint_from_window(p_reg, px_per_mm=30.0, out_dir=str(out_base / "reg"), cfg=cfg, prefix="reg")
 
     # 2. Genuine verification photos of Saree A under various conditions
     genuine_conditions = [
@@ -209,7 +209,7 @@ def test_genuine_vs_impostor_distributions_physically_consistent(cfg, tmp_path):
     genuine_scores = []
     for label, shift, rot, scale, s_seed in genuine_conditions:
         photo = _render_phone_photo(master_a, master_scale, phone_px_per_mm=scale, shift_mm=shift, rotation_deg=rot, seed=s_seed)
-        fp = extract_fingerprint(photo, out_dir=str(out_base / label), cfg=cfg, prefix=label, px_per_mm=scale)
+        fp = extract_fingerprint_from_window(photo, px_per_mm=scale, out_dir=str(out_base / label), cfg=cfg, prefix=label)
         m_res = match_fingerprints(fp_reg, fp, cfg=cfg)
         score = m_res["score_residual"]
         assert score is not None
@@ -227,7 +227,7 @@ def test_genuine_vs_impostor_distributions_physically_consistent(cfg, tmp_path):
     impostor_scores = []
     for label, shift, rot, scale, s_seed in impostor_conditions:
         photo = _render_phone_photo(master_b, master_scale, phone_px_per_mm=scale, shift_mm=shift, rotation_deg=rot, seed=s_seed)
-        fp = extract_fingerprint(photo, out_dir=str(out_base / label), cfg=cfg, prefix=label, px_per_mm=scale)
+        fp = extract_fingerprint_from_window(photo, px_per_mm=scale, out_dir=str(out_base / label), cfg=cfg, prefix=label)
         m_res = match_fingerprints(fp_reg, fp, cfg=cfg)
         score = m_res["score_residual"]
         assert score is not None
@@ -260,7 +260,7 @@ def test_glare_masking_in_fingerprint(cfg, tmp_path):
     img_glare, _ = make_fabric(spec)
 
     out_dir = str(tmp_path / "fp_glare")
-    fp = extract_fingerprint(img_glare, out_dir=out_dir, cfg=cfg, prefix="glare", px_per_mm=25.0)
+    fp = extract_fingerprint_from_window(img_glare, px_per_mm=25.0, out_dir=out_dir, cfg=cfg, prefix="glare")
 
     data_res = np.load(fp["residual_path"])
     glare_mask = data_res["glare_mask"]
@@ -284,8 +284,8 @@ def test_uncalibrated_thresholds_return_none(cfg, tmp_path):
     spec = FabricSpec(ends_per_inch=60, picks_per_inch=60, px_per_mm=25.0)
     img, _ = make_fabric(spec)
 
-    fp1 = extract_fingerprint(img, out_dir=str(tmp_path / "fp_uncal1"), cfg=cfg, prefix="u1", px_per_mm=25.0)
-    fp2 = extract_fingerprint(img, out_dir=str(tmp_path / "fp_uncal2"), cfg=cfg, prefix="u2", px_per_mm=25.0)
+    fp1 = extract_fingerprint_from_window(img, px_per_mm=25.0, out_dir=str(tmp_path / "fp_uncal1"), cfg=cfg, prefix="u1")
+    fp2 = extract_fingerprint_from_window(img, px_per_mm=25.0, out_dir=str(tmp_path / "fp_uncal2"), cfg=cfg, prefix="u2")
 
     res = match_fingerprints(fp1, fp2, cfg=cfg)
 
@@ -329,11 +329,11 @@ def test_card_shift_2mm_diagonal(cfg, tmp_path):
     out_base.mkdir()
 
     p_reg = _render_phone_photo(master_a, master_scale, phone_px_per_mm=30.0, shift_mm=(0.0, 0.0), rotation_deg=0.0, seed=1)
-    fp_reg = extract_fingerprint(p_reg, out_dir=str(out_base / "reg"), cfg=cfg, prefix="reg", px_per_mm=30.0)
+    fp_reg = extract_fingerprint_from_window(p_reg, px_per_mm=30.0, out_dir=str(out_base / "reg"), cfg=cfg, prefix="reg")
 
     # 2 mm diagonal shift (dx = 2.0 mm, dy = 2.0 mm)
     p_diag = _render_phone_photo(master_a, master_scale, phone_px_per_mm=30.0, shift_mm=(2.0, 2.0), rotation_deg=0.0, seed=2)
-    fp_diag = extract_fingerprint(p_diag, out_dir=str(out_base / "diag"), cfg=cfg, prefix="diag", px_per_mm=30.0)
+    fp_diag = extract_fingerprint_from_window(p_diag, px_per_mm=30.0, out_dir=str(out_base / "diag"), cfg=cfg, prefix="diag")
 
     res_diag = match_fingerprints(fp_reg, fp_diag, cfg=cfg)
     score_gen = res_diag["score_residual"]
@@ -343,7 +343,7 @@ def test_card_shift_2mm_diagonal(cfg, tmp_path):
 
     # Impostor on same diagonal condition
     p_imp = _render_phone_photo(master_b, master_scale, phone_px_per_mm=30.0, shift_mm=(2.0, 2.0), rotation_deg=0.0, seed=3)
-    fp_imp = extract_fingerprint(p_imp, out_dir=str(out_base / "imp"), cfg=cfg, prefix="imp", px_per_mm=30.0)
+    fp_imp = extract_fingerprint_from_window(p_imp, px_per_mm=30.0, out_dir=str(out_base / "imp"), cfg=cfg, prefix="imp")
 
     res_imp = match_fingerprints(fp_reg, fp_imp, cfg=cfg)
     score_imp = res_imp["score_residual"]
@@ -384,9 +384,9 @@ def test_calibrated_decision_thresholds(cfg, tmp_path):
     )
     img_other, _ = make_fabric(spec_other)
 
-    fp1 = extract_fingerprint(img1, out_dir=str(tmp_path / "fp_c1"), cfg=cfg_calibrated, prefix="c1", px_per_mm=25.0)
-    fp2 = extract_fingerprint(img2, out_dir=str(tmp_path / "fp_c2"), cfg=cfg_calibrated, prefix="c2", px_per_mm=25.0)
-    fp_other = extract_fingerprint(img_other, out_dir=str(tmp_path / "fp_co"), cfg=cfg_calibrated, prefix="co", px_per_mm=25.0)
+    fp1 = extract_fingerprint_from_window(img1, px_per_mm=25.0, out_dir=str(tmp_path / "fp_c1"), cfg=cfg_calibrated, prefix="c1")
+    fp2 = extract_fingerprint_from_window(img2, px_per_mm=25.0, out_dir=str(tmp_path / "fp_c2"), cfg=cfg_calibrated, prefix="c2")
+    fp_other = extract_fingerprint_from_window(img_other, px_per_mm=25.0, out_dir=str(tmp_path / "fp_co"), cfg=cfg_calibrated, prefix="co")
 
     # Genuine match
     res_gen = match_fingerprints(fp1, fp2, cfg=cfg_calibrated)
@@ -397,3 +397,20 @@ def test_calibrated_decision_thresholds(cfg, tmp_path):
     res_imp = match_fingerprints(fp1, fp_other, cfg=cfg_calibrated)
     assert res_imp["calibrated"] is True
     assert res_imp["match"] is False
+
+
+def test_extract_fingerprint_no_card_raises(cfg, tmp_path):
+    """
+    Production extract_fingerprint() must strictly require marker card detection (§7.8).
+    If no card markers exist in the scene photo, it must fail with NO_CARD.
+    """
+    # Plain noise scene without card markers
+    noise_photo = np.random.uniform(0.3, 0.7, (1200, 1200)).astype(np.float32)
+    with pytest.raises(ValueError) as excinfo:
+        extract_fingerprint(
+            noise_photo,
+            out_dir=str(tmp_path / "fp_nocard"),
+            cfg=cfg,
+            prefix="fail",
+        )
+    assert "NO_CARD" in str(excinfo.value)
