@@ -1,0 +1,13 @@
+# TantSaakshi Backend Dependencies
+# Install with: pip install -r requirements-backend.txt
+
+fastapi>=0.100.0
+uvicorn>=0.20.0
+SQLAlchemy>=2.0.0
+bcrypt>=4.0.0
+PyJWT>=2.0.0
+python-multipart>=0.0.5
+jinja2>=3.0.0
+qrcode>=7.0
+reportlab>=4.0
+Pillow>=9.0.0
