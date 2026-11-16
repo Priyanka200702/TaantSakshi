@@ -64,6 +64,7 @@ defects:
   threshold_floor: 0.04
 
 grade:                            # PROVISIONAL — to be agreed with the cooperative
+  mode: "provisional_tpi_only"    # "provisional_tpi_only" returns null grade; irregularity alone never labels handloom as C
   use_defects: false              # Report defects but do not penalise grade until tuned on real sarees
   A: {max_irregularity: 0.04, max_defect_fraction: 0.002}
   B: {max_irregularity: 0.08, max_defect_fraction: 0.01}

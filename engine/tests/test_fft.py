@@ -558,24 +558,101 @@ def test_defects_broken_thread_detected(cfg):
 def test_grade_classification(cfg):
     """
     Test grade assignment following config thresholds:
-      - Grade A: max_irregularity: 0.04, max_defect_fraction: 0.002
-      - Grade B: max_irregularity: 0.08, max_defect_fraction: 0.01
-      - Grade C: else
+      - provisional_tpi_only mode: returns None (grade null and provisional)
+      - standard mode:
+          * Grade A: max_irregularity: 0.04, max_defect_fraction: 0.002
+          * Grade B: max_irregularity: 0.08, max_defect_fraction: 0.01
+          * Grade C: else
     """
     from engine.fft_grade import _compute_grade
 
     grade_cfg = cfg["grade"]
 
-    # When use_defects is False (default per config), defects do not downgrade
-    assert _compute_grade(0.03, 0.001, grade_cfg) == "A"
-    assert _compute_grade(0.06, 0.001, grade_cfg) == "B"
-    assert _compute_grade(0.12, 0.001, grade_cfg) == "C"
+    # In provisional_tpi_only mode (default), grade is null
+    if grade_cfg.get("mode") == "provisional_tpi_only":
+        assert _compute_grade(0.03, 0.001, grade_cfg) is None
+        assert _compute_grade(0.12, 0.001, grade_cfg) is None
+
+    # When mode is standard:
+    std_cfg = dict(grade_cfg, mode="standard", use_defects=False)
+    assert _compute_grade(0.03, 0.001, std_cfg) == "A"
+    assert _compute_grade(0.06, 0.001, std_cfg) == "B"
+    assert _compute_grade(0.12, 0.001, std_cfg) == "C"
     # High defect does not downgrade when use_defects=False
-    assert _compute_grade(0.03, 0.02, grade_cfg) == "A"
+    assert _compute_grade(0.03, 0.02, std_cfg) == "A"
 
     # When use_defects is True, high defects downgrade
-    grade_cfg_defects = dict(grade_cfg, use_defects=True)
+    grade_cfg_defects = dict(std_cfg, use_defects=True)
     assert _compute_grade(0.03, 0.001, grade_cfg_defects) == "A"
     assert _compute_grade(0.06, 0.001, grade_cfg_defects) == "B"
     assert _compute_grade(0.03, 0.02, grade_cfg_defects) == "C"
+
+
+# ---------------------------------------------------------------------------
+# Task 3: Paired-Yarn / 2/1 Weave Subharmonic Verification
+# ---------------------------------------------------------------------------
+
+def test_paired_yarn_and_twill_subharmonic(cfg):
+    """
+    Verify that paired-yarn structures (2-yarn group) and 2/1 twill repeats:
+      a) Do NOT halve counts to the pair/repeat unit frequency (e.g. 30 or 20 TPI).
+      b) Do NOT double counts wrongly on coarse weaves (e.g. 28 TPI -> 56 TPI).
+    """
+    from engine.fft_grade import run_fft_grade
+
+    px_per_mm = 40.0
+    window_mm = 20.0
+    N = int(round(window_mm * px_per_mm))
+    xs = np.arange(N, dtype=np.float64)
+    ys = np.arange(N, dtype=np.float64)
+    XX, YY = np.meshgrid(xs, ys)
+
+    # 1. Paired-yarn weave (60 TPI threads, paired at 30 TPI)
+    p60 = px_per_mm / (60.0 / 25.4)
+    w_fund = np.cos(2 * np.pi * XX / p60)
+    wt_fund = np.cos(2 * np.pi * YY / p60)
+    w_pair = 0.35 * np.cos(2 * np.pi * XX / (2 * p60))
+    wt_pair = 0.35 * np.cos(2 * np.pi * YY / (2 * p60))
+    img_paired = (0.5 + 0.22 * (w_fund + w_pair) + 0.22 * (wt_fund + wt_pair)).astype(np.float32)
+
+    res1 = run_fft_grade(img_paired, px_per_mm, cfg)
+    assert res1["ok"], f"Paired-yarn weave failed: {res1.get('reason')}"
+    assert abs(res1["ends_per_inch"] - 60.0) / 60.0 < 0.02, (
+        f"Ends halved or doubled: expected 60.0, got {res1['ends_per_inch']:.1f}"
+    )
+    assert abs(res1["picks_per_inch"] - 60.0) / 60.0 < 0.02, (
+        f"Picks halved or doubled: expected 60.0, got {res1['picks_per_inch']:.1f}"
+    )
+
+    # 2. 2/1 twill weave (60 TPI threads, repeat at 20 TPI)
+    twill_x = 0.35 * np.cos(2 * np.pi * (XX - YY) / (3 * p60))
+    twill_y = 0.35 * np.cos(2 * np.pi * (XX + YY) / (3 * p60))
+    img_twill = (0.5 + 0.22 * (w_fund + twill_x) + 0.22 * (wt_fund + twill_y)).astype(np.float32)
+
+    res2 = run_fft_grade(img_twill, px_per_mm, cfg)
+    assert res2["ok"], f"2/1 twill failed: {res2.get('reason')}"
+    assert abs(res2["ends_per_inch"] - 60.0) / 60.0 < 0.02, (
+        f"2/1 twill ends wrong: expected 60.0, got {res2['ends_per_inch']:.1f}"
+    )
+    assert abs(res2["picks_per_inch"] - 60.0) / 60.0 < 0.02, (
+        f"2/1 twill picks wrong: expected 60.0, got {res2['picks_per_inch']:.1f}"
+    )
+
+    # 3. Coarse single yarn (28 TPI with 25% 2nd harmonic overtone at 56 TPI)
+    p28 = px_per_mm / (28.0 / 25.4)
+    phase_x = 2 * np.pi * XX / p28
+    phase_y = 2 * np.pi * YY / p28
+    w_28 = 0.22 * (np.cos(phase_x) + 0.25 * np.cos(2 * phase_x))
+    wt_28 = 0.22 * (np.cos(phase_y) + 0.25 * np.cos(2 * phase_y))
+    img_coarse = (0.5 + w_28 + wt_28).astype(np.float32)
+
+    res3 = run_fft_grade(img_coarse, px_per_mm, cfg)
+    assert res3["ok"], f"Coarse single yarn failed: {res3.get('reason')}"
+    assert abs(res3["ends_per_inch"] - 28.0) / 28.0 < 0.02, (
+        f"Coarse yarn doubled: expected 28.0, got {res3['ends_per_inch']:.1f}"
+    )
+    assert abs(res3["picks_per_inch"] - 28.0) / 28.0 < 0.02, (
+        f"Coarse yarn doubled: expected 28.0, got {res3['picks_per_inch']:.1f}"
+    )
+
 

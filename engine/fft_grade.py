@@ -871,7 +871,10 @@ def _detect_defects(
 # §7.7 Grade
 # ---------------------------------------------------------------------------
 
-def _compute_grade(irregularity: float, defect_fraction: float, grade_cfg: dict) -> str:
+def _compute_grade(irregularity: float, defect_fraction: float, grade_cfg: dict) -> str | None:
+    mode = grade_cfg.get("mode", "standard") if isinstance(grade_cfg, dict) else "standard"
+    if mode == "provisional_tpi_only":
+        return None
     if math.isnan(irregularity):
         return "C"
     a_cfg = grade_cfg["A"]
