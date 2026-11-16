@@ -51,6 +51,10 @@ fft:
   expect_perpendicular_tol_deg: 15
   flatfield_sigma_px: 25.0
   fwhm0: 2.25                    # Instrument-limited peak width at actual window N (calibrated)
+  min_tpi: 20                    # Thread band physical lower bound (threads per inch)
+  max_tpi: 200                   # Thread band physical upper bound (threads per inch)
+  expected_axis_tol_deg: 20      # Wedge half-width to search near card axes (0° and 90°)
+  cross_check_tol: 0.05          # 1-D vs 2-D period agreement tolerance (fraction)
 
 defects:
   notch_radius: 3

@@ -8,3 +8,4 @@ reportlab==5.1.0
 matplotlib==3.11.2
 pytest==9.2.0
 pillow==13.0.0
+pillow-heif>=0.18.0            # Task 5: HEIC/HEIF input support

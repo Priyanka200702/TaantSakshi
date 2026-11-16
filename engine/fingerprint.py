@@ -179,6 +179,63 @@ def extract_fingerprint(
 
     fp_cfg = cfg["fingerprint"]
     rect_cfg = cfg["rectify"]
+    target_scale = float(fp_cfg.get("scale_px_per_mm", rect_cfg.get("fingerprint_px_per_mm", 10.0)))
+
+    # If a single 2-D array is passed directly, forward to window variant
+    if isinstance(image_paths_or_arrays, np.ndarray) and image_paths_or_arrays.ndim == 2:
+        if px_per_mm is None:
+            raise ValueError("px_per_mm is required when passing a 2-D window array")
+        return extract_fingerprint_from_window(
+            window=image_paths_or_arrays,
+            px_per_mm=px_per_mm,
+            out_dir=out_dir,
+            cfg=cfg,
+            prefix=prefix,
+        )
+
+    items = image_paths_or_arrays if isinstance(image_paths_or_arrays, list) else [image_paths_or_arrays]
+    if not items:
+        raise ValueError("No images provided for fingerprint extraction")
+
+    # Detect card in each frame; keep those that pass
+    passing_cards = []
+    raw_burst = []
+    for it in items:
+        raw = _ensure_loaded_image(it)
+        card_res = detect_and_rectify(raw, cfg)
+        if card_res["ok"]:
+            passing_cards.append(card_res)
+            raw_burst.append(raw)
+
+    if not passing_cards:
+        raise ValueError("NO_CARD: Marker card detection failed on all frames")
+
+    min_native = min(float(c.get("native_px_per_mm", 0.0)) for c in passing_cards)
+    if min_native < target_scale:
+        raise ValueError(
+            f"LOW_RES_FINGERPRINT: native resolution {min_native:.1f} < target {target_scale:.1f} px/mm"
+        )
+
+    canonical_scale = float(cfg["rectify"]["canonical_px_per_mm"])
+    common_scale = min(min_native, canonical_scale)
+    rect_windows: list[np.ndarray] = []
+    for raw in raw_burst:
+        c_rect = detect_and_rectify(raw, cfg, target_px_per_mm=common_scale)
+        if c_rect["ok"] and c_rect["window_gray"] is not None:
+            rect_windows.append(c_rect["window_gray"])
+
+    if len(rect_windows) > 1:
+        stacked_window, _ = stack_burst_frames(rect_windows, top_k=int(cfg["enhance"]["stack_top_k"]))
+    else:
+        stacked_window = rect_windows[0]
+
+    return extract_fingerprint_from_window(
+        window=stacked_window,
+        px_per_mm=common_scale,
+        out_dir=out_dir,
+        cfg=cfg,
+        prefix=prefix,
+    )
 
 def extract_fingerprint_from_window(
     window: np.ndarray,
@@ -186,6 +243,8 @@ def extract_fingerprint_from_window(
     out_dir: str,
     cfg: dict[str, Any] | None = None,
     prefix: str = "fabric",
+    rotation_angle_deg: float | None = None,
+    rotation_source: str | None = None,
 ) -> dict[str, Any]:
     """
     Extract fabric fingerprint from a pre-rectified 2D window array.
@@ -203,6 +262,13 @@ def extract_fingerprint_from_window(
         Engine configuration dictionary.
     prefix : str
         Filename prefix for .npz outputs.
+    rotation_angle_deg : float or None
+        Task 4: If provided and rotation_source == 'measured', rotate by this angle.
+        If rotation_source == 'card_axes', rotate by 0°.
+    rotation_source : str or None
+        'measured' -> validation passed, use measured thread angle.
+        'card_axes' -> rotate by 0°.
+        None -> if validation passes (or in standalone tests), use measured angle.
 
     Returns
     -------
@@ -230,14 +296,31 @@ def extract_fingerprint_from_window(
     sat_level = int(cfg["quality"]["saturation_level"])
     _, raw_glare_mask, _ = mask_glare(stacked_window, saturation_level=sat_level)
 
-    # 2. De-weave and extract orientation angle
-    deweaver, warp_angle_deg, _ = compute_weave_residual_and_orientation(stacked_window, effective_scale, cfg)
+    # 2. De-weave and extract measured orientation angle
+    deweaver, measured_warp_angle_deg, _ = compute_weave_residual_and_orientation(
+        stacked_window, effective_scale, cfg
+    )
 
-    # 3. Canonical orientation normalisation: rotate so warp threads are strictly vertical
+    # Task 4: rotate by measured angle ONLY if validation passed
+    # If caller explicitly specified rotation_source:
+    if rotation_source == "card_axes":
+        apply_angle = 0.0
+        used_source = "card_axes"
+    elif rotation_source == "measured":
+        apply_angle = float(rotation_angle_deg) if rotation_angle_deg is not None else float(measured_warp_angle_deg)
+        used_source = "measured"
+    else:
+        # None passed: default to measured angle (and record 'measured')
+        apply_angle = float(measured_warp_angle_deg)
+        used_source = "measured"
+
+    stored_warp_angle_deg = apply_angle
+
+    # 3. Canonical orientation normalisation
     H, W = deweaver.shape
     cy, cx = H / 2.0, W / 2.0
-    if abs(warp_angle_deg) > 0.05:
-        M_rot = cv2.getRotationMatrix2D((cx, cy), warp_angle_deg, 1.0)
+    if abs(apply_angle) > 0.05:
+        M_rot = cv2.getRotationMatrix2D((cx, cy), apply_angle, 1.0)
         deweaver = cv2.warpAffine(deweaver, M_rot, (W, H), flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT_101)
         raw_glare_mask = cv2.warpAffine(
             raw_glare_mask.astype(np.uint8), M_rot, (W, H), flags=cv2.INTER_NEAREST, borderMode=cv2.BORDER_CONSTANT, borderValue=1
@@ -295,7 +378,7 @@ def extract_fingerprint_from_window(
         responses = np.empty((0,), dtype=np.float32)
         desc_arr = np.empty((0, 128), dtype=np.uint8)
 
-    # 8. Save .npz files
+    # 8. Save .npz files (Task 4: store rotation_source)
     os.makedirs(out_dir, exist_ok=True)
     residual_path = os.path.join(out_dir, f"{prefix}_residual.npz")
     sift_path = os.path.join(out_dir, f"{prefix}_sift.npz")
@@ -305,7 +388,8 @@ def extract_fingerprint_from_window(
         residual=crop_res.astype(np.float16),
         glare_mask=crop_glare.astype(bool),
         scale_px_per_mm=float(target_scale),
-        warp_angle_deg=float(warp_angle_deg),
+        warp_angle_deg=float(stored_warp_angle_deg),
+        rotation_source=str(used_source),
     )
 
     np.savez_compressed(

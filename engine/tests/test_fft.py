@@ -266,13 +266,13 @@ def test_design_stripes_ignored(cfg):
 # ---------------------------------------------------------------------------
 
 def test_no_weave_on_pure_noise(cfg):
-    """Pure random noise has no thread peaks → should return NO_WEAVE (or ALIASING)."""
+    """Pure random noise has no thread peaks → should return NO_WEAVE, ALIASING, or WEAVE_UNCLEAR."""
     rng = np.random.default_rng(0)
     noise_img = rng.random((800, 800)).astype(np.float32)
     result = run_fft_grade(noise_img, px_per_mm=40.0, cfg=cfg)
     assert not result["ok"], "Expected failure on pure noise, got ok=True"
-    assert result["code"] in ("NO_WEAVE", "ALIASING"), (
-        f"Expected NO_WEAVE/ALIASING on noise, got {result['code']}"
+    assert result["code"] in ("NO_WEAVE", "ALIASING", "WEAVE_UNCLEAR"), (
+        f"Expected NO_WEAVE/ALIASING/WEAVE_UNCLEAR on noise, got {result['code']}"
     )
 
 

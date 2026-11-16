@@ -11,10 +11,15 @@ Priority evaluation order:
   6. BLURRY        (Sharpness variance of Laplacian)
   7. NO_WEAVE      (Thread peak SNR)
   8. ALIASING      (Pixels per thread < 4.0 or > 0.4 Nyquist)
-  9. DESIGN_AREA   (Low-frequency design pattern energy ratio)
+  9. WEAVE_UNCLEAR (Validation: perp / 1-D cross-check / per-peak SNR)
+ 10. DESIGN_AREA   (Low-frequency design pattern energy ratio, contrast-normalised)
 
 Rule: Measures and reports ALL metrics for evaluation; fails on the FIRST in priority order.
 Never raises on bad photos — returns ok: False with human text reason.
+
+Changes (engine-fixes):
+  Task 3  – WEAVE_UNCLEAR inserted between ALIASING and DESIGN_AREA.
+  Task 6b – design_energy_ratio computed on contrast-normalised image.
 """
 from __future__ import annotations
 
@@ -55,6 +60,7 @@ def evaluate_quality(
         "warp_px_per_thread": 0.0,
         "weft_px_per_thread": 0.0,
         "design_energy_ratio": 0.0,
+        "channel_used": "gray",
     }
 
     # Exposure metrics: measure on the rectified fabric window if available,
@@ -86,26 +92,30 @@ def evaluate_quality(
         ppt = fft_result.get("px_per_thread", {})
         metrics["warp_px_per_thread"] = float(ppt.get("warp", 0.0))
         metrics["weft_px_per_thread"] = float(ppt.get("weft", 0.0))
+        metrics["channel_used"] = q_fft.get("channel_used", "gray")
 
-        # Design energy ratio computation:
-        # Ratio of low-frequency spectrum energy (below thread band) to in-band energy
+        # Task 6b: Design energy ratio after local contrast normalisation
         if window_gray is not None:
-            N = window_gray.shape[0]
-            cy = cx = N // 2
-            F_mag = np.abs(np.fft.fftshift(np.fft.fft2(window_gray.astype(np.float64))))
-            band_min_k = N / cfg["fft"]["band_max_px_per_cycle"]
-            band_max_k = N / cfg["fft"]["band_min_px_per_cycle"]
-            dc_r = cfg["fft"]["dc_mask_radius"]
-
-            yy, xx = np.ogrid[:N, :N]
-            r = np.sqrt((xx - cx).astype(float) ** 2 + (yy - cy).astype(float) ** 2)
-
-            low_freq_mask = (r > dc_r) & (r < band_min_k)
-            in_band_mask = (r >= band_min_k) & (r <= band_max_k)
-
-            e_low = float(np.sum(F_mag[low_freq_mask] ** 2))
-            e_band = float(np.sum(F_mag[in_band_mask] ** 2)) + 1e-9
-            metrics["design_energy_ratio"] = float(e_low / e_band)
+            try:
+                from engine.fft_grade import compute_design_energy_ratio_normalized
+                metrics["design_energy_ratio"] = compute_design_energy_ratio_normalized(
+                    window_gray, cfg
+                )
+            except Exception:
+                # Fallback to original method if anything goes wrong
+                N = window_gray.shape[0]
+                cy = cx = N // 2
+                F_mag = np.abs(np.fft.fftshift(np.fft.fft2(window_gray.astype(np.float64))))
+                band_min_k = N / cfg["fft"]["band_max_px_per_cycle"]
+                band_max_k = N / cfg["fft"]["band_min_px_per_cycle"]
+                dc_r = cfg["fft"]["dc_mask_radius"]
+                yy, xx = np.ogrid[:N, :N]
+                r = np.sqrt((xx - cx).astype(float) ** 2 + (yy - cy).astype(float) ** 2)
+                low_freq_mask = (r > dc_r) & (r < band_min_k)
+                in_band_mask = (r >= band_min_k) & (r <= band_max_k)
+                e_low = float(np.sum(F_mag[low_freq_mask] ** 2))
+                e_band = float(np.sum(F_mag[in_band_mask] ** 2)) + 1e-9
+                metrics["design_energy_ratio"] = float(e_low / e_band)
 
     # Priority check sequence (§7.2 table order)
     failures: list[tuple[str, str]] = []
@@ -136,7 +146,7 @@ def evaluate_quality(
     if window_gray is not None and metrics["sharpness"] < q_cfg["min_sharpness"]:
         failures.append(("BLURRY", "Too blurry — hold still"))
 
-    # 7. NO_WEAVE / ALIASING / DESIGN_AREA from FFT
+    # 7. NO_WEAVE / ALIASING / WEAVE_UNCLEAR / DESIGN_AREA from FFT
     if fft_result is not None:
         if not fft_result.get("ok"):
             code = fft_result.get("code", "NO_WEAVE")

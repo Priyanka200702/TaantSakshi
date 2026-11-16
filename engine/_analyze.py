@@ -34,10 +34,18 @@ from engine.quality import evaluate_quality
 
 
 def _load_image(path_or_array: str | np.ndarray) -> np.ndarray:
-    """Load image from disk if path, or return numpy array."""
+    """
+    Load image from disk if path, or return numpy array.
+    Task 5: supports .heic/.heif via pillow-heif; on failure returns None
+    (caller must check and return BAD_IMAGE with reason 'Save photos as JPEG').
+    """
     if isinstance(path_or_array, (str, Path)):
         p = str(path_or_array)
-        img = cv2.imread(p)
+        ext = Path(p).suffix.lower()
+        if ext in (".heic", ".heif"):
+            img = _load_heic(p)
+        else:
+            img = cv2.imread(p)
         if img is None:
             raise FileNotFoundError(f"Image could not be read: {p}")
         return img
@@ -45,6 +53,25 @@ def _load_image(path_or_array: str | np.ndarray) -> np.ndarray:
         return path_or_array
     else:
         raise TypeError(f"Expected file path or numpy array, got {type(path_or_array)}")
+
+
+def _load_heic(path: str) -> np.ndarray | None:
+    """
+    Task 5: Load a HEIC/HEIF file using pillow-heif.
+    Returns a BGR numpy array, or None if loading fails.
+    """
+    try:
+        import pillow_heif
+        pillow_heif.register_heif_opener()
+        from PIL import Image
+        pil_img = Image.open(path)
+        pil_img = pil_img.convert("RGB")
+        arr = np.array(pil_img, dtype=np.uint8)
+        # Convert RGB -> BGR for OpenCV convention
+        return cv2.cvtColor(arr, cv2.COLOR_RGB2BGR)
+    except Exception:
+        # pillow_heif not installed or file unreadable
+        return None
 
 
 def quality_check(image_paths: list[str | np.ndarray]) -> dict[str, Any]:
@@ -77,9 +104,11 @@ def quality_check(image_paths: list[str | np.ndarray]) -> dict[str, Any]:
 
     # Evaluate Gate 2 checks on rectified window
     win_gray = card_res["window_gray"]
+    win_color = card_res.get("window_color")
     sat_level = int(cfg["quality"]["saturation_level"])
     clean_gray, _, _ = mask_glare(win_gray, saturation_level=sat_level)
-    fft_res = run_fft_grade(clean_gray, card_res["px_per_mm"], cfg)
+    fft_input = win_color if win_color is not None else clean_gray
+    fft_res = run_fft_grade(fft_input, card_res["px_per_mm"], cfg)
     q_eval = evaluate_quality(first_img, card_res, win_gray, fft_res, cfg)
 
     return {
@@ -126,6 +155,21 @@ def analyze(
                     "timings_ms": timings,
                 }
             raw_images.append(img)
+        except FileNotFoundError as e:
+            # Task 5: distinguish HEIC load failure from general missing file
+            path_str = str(item)
+            ext = Path(path_str).suffix.lower() if isinstance(item, (str, Path)) else ""
+            if ext in (".heic", ".heif"):
+                reason = "Save photos as JPEG"
+            else:
+                reason = f"Failed to load image: {e}"
+            timings["total"] = (time.perf_counter() - t_start) * 1000
+            return {
+                "ok": False,
+                "code": "BAD_IMAGE",
+                "reason": reason,
+                "timings_ms": timings,
+            }
         except Exception as e:
             timings["total"] = (time.perf_counter() - t_start) * 1000
             return {
@@ -194,8 +238,10 @@ def analyze(
     timings["glare_masking"] = (time.perf_counter() - t0) * 1000
 
     # 3. FFT Analysis & Provisional Grading (§7.3 - §7.7)
+    # Task 6a: use colour window if available so run_fft_grade can select best contrast channel
     t0 = time.perf_counter()
-    fft_res = run_fft_grade(clean_gray, common_scale, cfg, debug_dir=debug_dir)
+    fft_input = rect_color_frames[0] if rect_color_frames and rect_color_frames[0] is not None else clean_gray
+    fft_res = run_fft_grade(fft_input, common_scale, cfg, debug_dir=debug_dir)
     timings["fft_grade"] = (time.perf_counter() - t0) * 1000
 
     # 4. Quality Gate Evaluation (§7.2 priority sequence)
@@ -229,6 +275,12 @@ def analyze(
     # 6. Fingerprint extraction (§7.8) - Item 9: never raise, return codes BAD_IMAGE / FINGERPRINT_FAILED
     t0 = time.perf_counter()
     fp_prefix = Path(image_paths[0]).stem if isinstance(image_paths[0], (str, Path)) else "fp"
+
+    # Task 4: pass the validated rotation angle (or 0 if validation failed)
+    # fft_res["rotation_source"] == "measured" means validation passed
+    fp_rotation_deg = float(fft_res.get("rotation_angle_deg", 0.0))
+    fp_rotation_source = fft_res.get("rotation_source", "card_axes")
+
     try:
         fp_result = extract_fingerprint_from_window(
             window=stacked_gray,
@@ -236,6 +288,8 @@ def analyze(
             out_dir=out_dir,
             cfg=cfg,
             prefix=fp_prefix,
+            rotation_angle_deg=fp_rotation_deg,
+            rotation_source=fp_rotation_source,
         )
     except Exception as e:
         err_s = str(e)

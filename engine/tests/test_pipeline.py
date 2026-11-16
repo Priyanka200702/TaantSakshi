@@ -272,8 +272,11 @@ def test_quality_rejection_no_weave(cfg, tmp_path):
 
     res = analyze([p], out_dir=str(tmp_path))
     assert not res["ok"]
-    assert res["code"] == "NO_WEAVE"
-    assert "threads" in res["reason"].lower()
+    assert res["code"] in ("NO_WEAVE", "WEAVE_UNCLEAR"), \
+        f"Expected NO_WEAVE or WEAVE_UNCLEAR, got {res['code']}: {res.get('reason')}"
+    # Both codes surface a user-facing reason mentioning threads or weave clarity
+    assert any(w in res["reason"].lower() for w in ("threads", "weave", "unclear", "thread")), \
+        f"Unexpected reason: {res['reason']}"
 
 
 def test_quality_rejection_design_area(cfg, tmp_path):
