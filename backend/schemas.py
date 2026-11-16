@@ -91,6 +91,9 @@ class VerificationResponse(BaseModel):
     result: Literal["genuine", "no_match", "not_calibrated", "retake"]
     score: float | None = None
     reason: str | None = None
+    code: str | None = None
+    message_en: str | None = None
+    message_bn: str | None = None
 
 
 # ---------------------------------------------------------------------------

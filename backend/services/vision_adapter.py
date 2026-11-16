@@ -22,6 +22,7 @@ QUALITY_FAILURE_CODES = {
     "BLURRY",
     "NO_WEAVE",
     "ALIASING",
+    "WEAVE_UNCLEAR",
     "DESIGN_AREA",
     "BAD_IMAGE",
 }
@@ -104,15 +105,16 @@ def run_registration_analysis(
 
 def run_verification_fingerprint(
     photo_paths: list[str],
-    qr_id: str,
+    upload_id: str,
 ) -> dict[str, Any]:
     """
     Extract verification fingerprint from a new photograph burst.
     Calls engine.make_fingerprint without modifying any engine code.
+    Saves fingerprint into unique directory verify_{upload_id}.
     """
     import engine
 
-    target_out_dir = FINGERPRINTS_DIR / f"verify_{qr_id}"
+    target_out_dir = FINGERPRINTS_DIR / f"verify_{upload_id}"
     target_out_dir.mkdir(parents=True, exist_ok=True)
 
     try:
@@ -121,7 +123,7 @@ def run_verification_fingerprint(
             out_dir=str(target_out_dir),
         )
     except Exception as exc:
-        logger.exception("Engine exception during make_fingerprint for %s: %s", qr_id, exc)
+        logger.exception("Engine exception during make_fingerprint for %s: %s", upload_id, exc)
         return {
             "ok": False,
             "code": "ENGINE_ERROR",
@@ -154,6 +156,8 @@ def run_verification_fingerprint(
         "code": "OK",
         "is_quality_failure": False,
         "fingerprint": result.get("fingerprint", {}),
+        "reason_en": en_msg,
+        "reason_bn": bn_msg,
     }
 
 
@@ -180,6 +184,9 @@ def compare_fingerprints(
             "result": "retake",
             "score": None,
             "reason": f"Matching failed: {exc}",
+            "code": "MATCH_FAILED",
+            "message_en": f"Matching failed: {exc}",
+            "message_bn": get_message("MATCH_FAILED", "bn", default="ম্যাচিং প্রক্রিয়া ব্যর্থ হয়েছে।"),
             "calibrated": False,
         }
 
@@ -193,17 +200,25 @@ def compare_fingerprints(
             "ok": True,
             "result": "not_calibrated",
             "score": None,
-            "reason": "Matching threshold is not yet calibrated on real fabric photos. Verification is pending calibration.",
+            "reason": get_message("NOT_CALIBRATED", "en"),
+            "code": "NOT_CALIBRATED",
+            "message_en": get_message("NOT_CALIBRATED", "en"),
+            "message_bn": get_message("NOT_CALIBRATED", "bn"),
             "calibrated": False,
             "raw_score": score,
         }
 
     decision = "genuine" if match_val is True else "no_match"
+    code = "GENUINE" if match_val is True else "NO_MATCH"
+    reason = f"Verification completed with score {score:.4f}" if score is not None else get_message(code, "en")
     return {
         "ok": True,
         "result": decision,
         "score": score,
-        "reason": f"Verification completed with score {score:.4f}",
+        "reason": reason,
+        "code": code,
+        "message_en": get_message(code, "en", default=reason),
+        "message_bn": get_message(code, "bn"),
         "calibrated": True,
         "raw": match_res,
     }

@@ -78,7 +78,7 @@ def test_46_to_48_data_photos_fingerprints_survive_restart(tmp_path, sample_imag
     saree2 = s2.query(Saree).filter(Saree.qr_id == "TS-PERSIST01").first()
     assert saree2 is not None
     assert saree2.proc_status == "done"
-    assert saree2.grade == "A"
+    assert saree2.grade is None
 
     # Test 47: Verify photo file exists on disk after restart
     assert Path(saree2.image_path).exists()

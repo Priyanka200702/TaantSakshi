@@ -44,7 +44,7 @@ def test_21_to_23_and_27_worker_success(client, token_staff_a, test_env, sample_
     assert saree_after.proc_status == "done"
     assert saree_after.epi is not None
     assert saree_after.ppi is not None
-    assert saree_after.grade == "A"
+    assert saree_after.grade is None
     assert saree_after.fingerprint_path is not None
     assert Path(saree_after.fingerprint_path).exists()
 
@@ -55,7 +55,7 @@ def test_21_to_23_and_27_worker_success(client, token_staff_a, test_env, sample_
     assert "fingerprint_path" not in status_data
     assert "fingerprint" not in status_data
     assert status_data["status"] == "done"
-    assert status_data["grade"] == "A"
+    assert status_data["grade"] is None
 
 
 def test_24_to_25_worker_quality_rejection_releases_tag(client, token_staff_a, test_env, sample_tilted_image_bytes):

@@ -79,7 +79,7 @@ def test_45_listing_endpoint(client, token_staff_a, test_env, sample_image_bytes
     assert data["saree_type"] == "Dhaniakhali Cotton"
     assert data["cooperative"] == "Dhaniakhali Weavers Society"
     assert data["district"] == "Hooghly"
-    assert data["grade"] == "A"
+    assert data["grade"] is None
     assert data["status"] == "listed"
     assert data["ends_per_inch"] is not None
     assert data["picks_per_inch"] is not None

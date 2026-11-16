@@ -84,13 +84,35 @@ def generate_tags(
 
 
 @router.get("/tags/pdf/{filename}")
-def download_tags_pdf(filename: str):
-    """Serve generated tags PDF for printing."""
-    # Sanitize filename
+def download_tags_pdf(
+    filename: str,
+    user: User = Depends(require_staff_or_admin),
+    db: Session = Depends(get_db),
+):
+    """
+    Task 6: Securely serve generated tags PDF for printing.
+    Enforces cooperative isolation: user must be staff from the owning cooperative or admin.
+    """
     clean_name = Path(filename).name
     pdf_path = TAGS_PDF_DIR / clean_name
     if not pdf_path.exists():
         raise HTTPException(status_code=404, detail="Tag PDF file not found")
+
+    # Find the generation log entry for this PDF to verify cooperative ownership
+    log_entry = (
+        db.query(TagGenerationLog)
+        .filter(TagGenerationLog.pdf_path.like(f"%{clean_name}"))
+        .first()
+    )
+    if not log_entry:
+        raise HTTPException(status_code=404, detail="Tag PDF record not found")
+
+    if user.role != "admin" and log_entry.coop_id != user.coop_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to access tag PDFs for another cooperative",
+        )
+
     return FileResponse(
         str(pdf_path),
         media_type="application/pdf",

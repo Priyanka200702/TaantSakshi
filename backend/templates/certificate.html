@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="{{ lang }}">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -278,16 +279,20 @@
             font-weight: 600;
             text-transform: uppercase;
         }
-        .status-queued, .status-processing {
+
+        .status-queued,
+        .status-processing {
             background: #fff3e0;
             color: #e65100;
         }
+
         .status-sold {
             background: #eceff1;
             color: #455a64;
         }
     </style>
 </head>
+
 <body>
 
     <!-- Language Selector -->
@@ -323,7 +328,8 @@
                         {% endif %}
                     </strong><br>
                     {% if lang == 'bn' %}
-                    এই কোডটি একাধিকবার স্ক্যান করা হয়েছে; এটি নকল বা ফটোকপি হতে পারে। দয়া করে বিক্রেতার সাথে যাচাই করুন।
+                    এই কোডটি একাধিকবার স্ক্যান করা হয়েছে; এটি নকল বা ফটোকপি হতে পারে। দয়া করে বিক্রেতার সাথে যাচাই
+                    করুন।
                     {% else %}
                     This tag has been scanned multiple times; it may be copied or re-printed.
                     {% endif %}
@@ -364,9 +370,11 @@
                 </h2>
                 <p class="state-desc">
                     {% if lang == 'bn' %}
-                    ট্যাগটি প্রকৃত সমবায় সমিতির অধীনে মুদ্রিত হয়েছে কিন্তু এখনও কোনো নির্দিষ্ট শাড়ির সাথে যুক্ত করা হয়নি।
+                    ট্যাগটি প্রকৃত সমবায় সমিতির অধীনে মুদ্রিত হয়েছে কিন্তু এখনও কোনো নির্দিষ্ট শাড়ির সাথে যুক্ত করা
+                    হয়নি।
                     {% else %}
-                    This is a genuine blank tag issued to {{ coop.name if coop else 'a cooperative' }}, but no saree has been registered against it yet.
+                    This is a genuine blank tag issued to {{ coop.name if coop else 'a cooperative' }}, but no saree has
+                    been registered against it yet.
                     {% endif %}
                 </p>
                 <div style="margin-top: 10px;">
@@ -387,9 +395,11 @@
                 </h2>
                 <p class="state-desc">
                     {% if lang == 'bn' %}
-                    শাড়িটির ছবি গৃহীত হয়েছে। কম্পিউটার ভিশন ইঞ্জিনের মাধ্যমে সুতার ঘনত্ব ও বুনন গুণমান বিশ্লেষণ প্রক্রিয়াধীন রয়েছে। অনুগ্রহ করে কিছুক্ষণ পর আবার দেখুন।
+                    শাড়িটির ছবি গৃহীত হয়েছে। কম্পিউটার ভিশন ইঞ্জিনের মাধ্যমে সুতার ঘনত্ব ও বুনন গুণমান বিশ্লেষণ
+                    প্রক্রিয়াধীন রয়েছে। অনুগ্রহ করে কিছুক্ষণ পর আবার দেখুন।
                     {% else %}
-                    The saree registration photograph is currently being analyzed by the computer vision engine. Please refresh in a moment.
+                    The saree registration photograph is currently being analyzed by the computer vision engine. Please
+                    refresh in a moment.
                     {% endif %}
                 </p>
                 <div style="margin-top: 10px;">
@@ -409,17 +419,20 @@
 
             <div class="info-grid">
                 <div class="info-row">
-                    <span class="info-label">{% if lang == 'bn' %}ডিজিটাল ট্যাগ আইডি{% else %}Digital Tag ID{% endif %}</span>
+                    <span class="info-label">{% if lang == 'bn' %}ডিজিটাল ট্যাগ আইডি{% else %}Digital Tag ID{% endif
+                        %}</span>
                     <span class="info-val tag-pill">{{ qr_id }}</span>
                 </div>
 
                 <div class="info-row">
-                    <span class="info-label">{% if lang == 'bn' %}তাঁত সমিতি / কো-অপারেটিভ{% else %}Weavers' Cooperative{% endif %}</span>
+                    <span class="info-label">{% if lang == 'bn' %}তাঁত সমিতি / কো-অপারেটিভ{% else %}Weavers'
+                        Cooperative{% endif %}</span>
                     <span class="info-val">{{ coop.name if coop else 'Cooperative Society' }}</span>
                 </div>
 
                 <div class="info-row">
-                    <span class="info-label">{% if lang == 'bn' %}জেলা / অঞ্চল{% else %}District / Region{% endif %}</span>
+                    <span class="info-label">{% if lang == 'bn' %}জেলা / অঞ্চল{% else %}District / Region{% endif
+                        %}</span>
                     <span class="info-val">{{ coop.district if coop else 'West Bengal' }}</span>
                 </div>
 
@@ -429,68 +442,91 @@
                 </div>
 
                 <div class="info-row">
-                    <span class="info-label">{% if lang == 'bn' %}তাঁতশিল্পী / কারিগর{% else %}Master Weaver{% endif %}</span>
+                    <span class="info-label">{% if lang == 'bn' %}তাঁতশিল্পী / কারিগর{% else %}Master Weaver{% endif
+                        %}</span>
                     <span class="info-val">
                         {% if weaver and weaver.show_name_publicly %}
-                            {{ weaver.name }}
+                        {{ weaver.name }}
                         {% else %}
-                            {% if lang == 'bn' %}সমবায় সমিতিভুক্ত প্রবীণ কারিগর{% else %}Registered Cooperative Weaver{% endif %}
+                        {% if lang == 'bn' %}সমবায় সমিতিভুক্ত প্রবীণ কারিগর{% else %}Registered Cooperative Weaver{%
+                        endif %}
                         {% endif %}
                     </span>
                 </div>
 
                 <div class="info-row">
-                    <span class="info-label">{% if lang == 'bn' %}নিবন্ধনের তারিখ{% else %}Registration Date{% endif %}</span>
+                    <span class="info-label">{% if lang == 'bn' %}নিবন্ধনের তারিখ{% else %}Registration Date{% endif
+                        %}</span>
                     <span class="info-val">{{ reg_date }}</span>
                 </div>
 
                 {% if tag and tag.status == 'sold' %}
                 <div class="info-row">
                     <span class="info-label">{% if lang == 'bn' %}বর্তমান অবস্থা{% else %}Status{% endif %}</span>
-                    <span class="info-val"><span class="status-pill status-sold">{% if lang == 'bn' %}বিক্রিত{% else %}Sold{% endif %}</span></span>
+                    <span class="info-val"><span class="status-pill status-sold">{% if lang == 'bn' %}বিক্রিত{% else
+                            %}Sold{% endif %}</span></span>
                 </div>
                 {% endif %}
             </div>
 
+            <!-- Downscaled Registered Fabric Photo (Display Copy) -->
+            <div class="fabric-preview-container" style="text-align: center; margin: 16px 20px 16px;">
+                <img src="/c/{{ qr_id }}/photo" alt="Registered Fabric"
+                    style="max-width: 100%; height: auto; max-height: 240px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border-color); box-shadow: 0 2px 8px rgba(0,0,0,0.06);" />
+                <div style="font-size: 12px; color: var(--text-muted); margin-top: 6px;">
+                    {% if lang == 'bn' %}নিবন্ধিত তাঁত কাপড়ের নমুনা ছবি{% else %}Registered fabric photo (Display
+                    copy){% endif %}
+                </div>
+            </div>
+
             <!-- Quality Grade Banner -->
             <div class="grade-banner">
+                {% if saree.grade %}
                 <div class="grade-title">
-                    {% if saree.grade %}
-                        Grade {{ saree.grade }}
-                    {% else %}
-                        Grade A
-                    {% endif %}
+                    Grade {{ saree.grade }}
                 </div>
                 <div class="grade-desc">
                     {% if lang == 'bn' %}
-                        {% if saree.grade == 'A' %}
-                            নিখুঁত ও সুষম বুনন — প্রথম শ্রেণি (খসড়া মূল্যায়ন)
-                        {% elif saree.grade == 'B' %}
-                            স্বাভাবিক হস্তনির্মিত নান্দনিক বৈশিষ্ট্যযুক্ত সুষম বুনন (খসড়া মূল্যায়ন)
-                        {% else %}
-                            প্রথাগত ঐতিহ্যবাহী হস্তনির্মিত তাঁতবস্ত্র (খসড়া মূল্যায়ন)
-                        {% endif %}
+                    {% if saree.grade == 'A' %}
+                    নিখুঁত ও সুষম বুনন — প্রথম শ্রেণি (খসড়া মূল্যায়ন)
+                    {% elif saree.grade == 'B' %}
+                    স্বাভাবিক হস্তনির্মিত নান্দনিক বৈশিষ্ট্যযুক্ত সুষম বুনন (খসড়া মূল্যায়ন)
                     {% else %}
-                        {% if saree.grade == 'A' %}
-                            Fine, even weave (Provisional grading)
-                        {% elif saree.grade == 'B' %}
-                            Authentic handloom texture with natural character (Provisional)
-                        {% else %}
-                            Traditional artisanal weave (Provisional)
-                        {% endif %}
+                    প্রথাগত ঐতিহ্যবাহী হস্তনির্মিত তাঁতবস্ত্র (খসড়া মূল্যায়ন)
+                    {% endif %}
+                    {% else %}
+                    {% if saree.grade == 'A' %}
+                    Fine, even weave (Provisional grading)
+                    {% elif saree.grade == 'B' %}
+                    Authentic handloom texture with natural character (Provisional)
+                    {% else %}
+                    Traditional artisanal weave (Provisional)
+                    {% endif %}
                     {% endif %}
                 </div>
+                {% else %}
+                <div class="grade-title" style="font-size: 20px;">
+                    {{ saree.epi | round(1) if saree.epi else '—' }} × {{ saree.ppi | round(1) if saree.ppi else '—' }}
+                    TPI
+                </div>
+                <div class="grade-desc">
+                    <div style="font-weight: 600;">গুণমান গ্রেড: খসড়া / এখনও নির্ধারিত হয়নি</div>
+                    <div style="font-size: 13px; color: var(--text-muted); margin-top: 2px;">Quality grade: provisional / not yet assigned</div>
+                </div>
+                {% endif %}
             </div>
 
             <!-- Thread Density Metric Cards -->
             <div class="thread-counts">
                 <div class="count-card">
                     <div class="count-num">{{ saree.epi | round(1) if saree.epi else '—' }}</div>
-                    <div class="count-label">{% if lang == 'bn' %}টানা সুতা (EPI){% else %}Ends / Inch (Warp){% endif %}</div>
+                    <div class="count-label">{% if lang == 'bn' %}টানা সুতা (EPI){% else %}Ends / Inch (Warp){% endif %}
+                    </div>
                 </div>
                 <div class="count-card">
                     <div class="count-num">{{ saree.ppi | round(1) if saree.ppi else '—' }}</div>
-                    <div class="count-label">{% if lang == 'bn' %}বানে সুতা (PPI){% else %}Picks / Inch (Weft){% endif %}</div>
+                    <div class="count-label">{% if lang == 'bn' %}বানে সুতা (PPI){% else %}Picks / Inch (Weft){% endif
+                        %}</div>
                 </div>
             </div>
 
@@ -503,9 +539,11 @@
                 </h2>
                 <p class="state-desc">
                     {% if lang == 'bn' %}
-                    শাড়ির তোলা ছবিটি আলোকচিত্র গুণমান যাচাইয়ে উত্তীর্ণ হয়নি ({{ saree.proc_error_reason or 'অস্পষ্ট ছবি' }})। ট্যাগটি অবমুক্ত করা হয়েছে যাতে পুনরায় ছবি তুলে নির্ভুলভাবে নিবন্ধন করা যায়।
+                    শাড়ির তোলা ছবিটি আলোকচিত্র গুণমান যাচাইয়ে উত্তীর্ণ হয়নি ({{ saree.proc_error_reason or 'অস্পষ্ট
+                    ছবি' }})। ট্যাগটি অবমুক্ত করা হয়েছে যাতে পুনরায় ছবি তুলে নির্ভুলভাবে নিবন্ধন করা যায়।
                     {% else %}
-                    The initial registration photograph did not pass quality validation ({{ saree.proc_error_reason or 'Photo quality check' }}). The tag has been released for retake.
+                    The initial registration photograph did not pass quality validation ({{ saree.proc_error_reason or
+                    'Photo quality check' }}). The tag has been released for retake.
                     {% endif %}
                 </p>
             </div>
@@ -523,4 +561,5 @@
     </div>
 
 </body>
+
 </html>

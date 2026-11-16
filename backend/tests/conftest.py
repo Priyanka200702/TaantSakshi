@@ -8,6 +8,9 @@ import os
 import sys
 import tempfile
 from pathlib import Path
+
+# Ensure test SECRET_KEY is set before importing backend modules
+os.environ.setdefault("SECRET_KEY", "test-secret-key-tantsaakshi-pytest-suite-2026")
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine

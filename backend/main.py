@@ -54,14 +54,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Mount static assets & generated PDFs
+# Mount static assets
 static_dir = BACKEND_DIR / "static"
 static_dir.mkdir(parents=True, exist_ok=True)
 app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
-
-tags_pdf_dir = TAGS_PDF_DIR
-tags_pdf_dir.mkdir(parents=True, exist_ok=True)
-app.mount("/tags/pdf", StaticFiles(directory=str(tags_pdf_dir)), name="tags_pdf")
 
 # Custom bilingual HTTPException handler
 @app.exception_handler(HTTPException)

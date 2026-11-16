@@ -7,12 +7,13 @@ from __future__ import annotations
 import datetime
 import json
 import shutil
+import uuid
 from pathlib import Path
 from fastapi import UploadFile, status
 from sqlalchemy.orm import Session
 
 from backend.auth import raise_bilingual_error
-from backend.config import ALLOWED_EXTENSIONS, IMAGES_DIR, MAX_FILE_SIZE_BYTES
+from backend.config import ALLOWED_EXTENSIONS, IMAGES_DIR, MAX_FILE_SIZE_BYTES, get_message
 from backend.models import Saree, User, Verification
 from backend.services.vision_adapter import compare_fingerprints, run_verification_fingerprint
 
@@ -30,16 +31,25 @@ def verify_saree_authenticity(
       If thresholds in config are null, returns 'not_calibrated'.
       Never returns genuine or no_match when uncalibrated.
       Returns 'retake' if verification photo quality check fails.
+      Fingerprints stored in unique folder verify_{upload_id}.
+      Always returns code, message_en, message_bn.
     """
     # 1. Check upload_id idempotency for verifications
     if upload_id:
         existing_ver = db.query(Verification).filter(Verification.upload_id == upload_id).first()
         if existing_ver:
+            code = existing_ver.code or ("NOT_CALIBRATED" if existing_ver.match == "not_calibrated" else existing_ver.match.upper())
             return {
                 "result": existing_ver.match,
                 "score": existing_ver.score,
                 "reason": existing_ver.reason,
+                "code": code,
+                "message_en": existing_ver.message_en or existing_ver.reason or get_message(code, "en"),
+                "message_bn": existing_ver.message_bn or get_message(code, "bn", default=existing_ver.reason or ""),
             }
+
+    # Generate unique upload identifier if not provided
+    effective_upload_id = upload_id or f"{qr_id}_{datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:6]}"
 
     # 2. Check saree registration existence
     saree = db.query(Saree).filter(Saree.qr_id == qr_id).first()
@@ -52,13 +62,19 @@ def verify_saree_authenticity(
             return {
                 "result": "retake",
                 "score": None,
-                "reason": "Saree registration image processing is still underway. Please wait for completion.",
+                "reason": get_message("REGISTRATION_PENDING", "en"),
+                "code": "REGISTRATION_PENDING",
+                "message_en": get_message("REGISTRATION_PENDING", "en"),
+                "message_bn": get_message("REGISTRATION_PENDING", "bn"),
             }
         else:
             return {
                 "result": "retake",
                 "score": None,
-                "reason": "Original saree registration failed quality analysis. Verification cannot be performed.",
+                "reason": get_message("REGISTRATION_FAILED", "en"),
+                "code": "REGISTRATION_FAILED",
+                "message_en": get_message("REGISTRATION_FAILED", "en"),
+                "message_bn": get_message("REGISTRATION_FAILED", "bn"),
             }
 
     # 4. Check registered fingerprint availability
@@ -66,7 +82,10 @@ def verify_saree_authenticity(
         return {
             "result": "retake",
             "score": None,
-            "reason": "Registered fingerprint file is not available on server.",
+            "reason": get_message("FINGERPRINT_NOT_FOUND", "en"),
+            "code": "FINGERPRINT_NOT_FOUND",
+            "message_en": get_message("FINGERPRINT_NOT_FOUND", "en"),
+            "message_bn": get_message("FINGERPRINT_NOT_FOUND", "bn"),
         }
 
     # 5. Check uploaded verification photos
@@ -76,8 +95,7 @@ def verify_saree_authenticity(
     verify_burst = photos[:5]
 
     # 6. Save verification photographs
-    ts_str = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%d_%H%M%S")
-    verify_dir = IMAGES_DIR / f"verify_{qr_id}_{ts_str}"
+    verify_dir = IMAGES_DIR / f"verify_{effective_upload_id}"
     verify_dir.mkdir(parents=True, exist_ok=True)
 
     saved_photo_paths: list[str] = []
@@ -99,16 +117,22 @@ def verify_saree_authenticity(
     primary_verify_photo = saved_photo_paths[0]
 
     # 7. Extract fingerprint from verification photograph
-    fp_res = run_verification_fingerprint(saved_photo_paths, qr_id)
+    fp_res = run_verification_fingerprint(saved_photo_paths, effective_upload_id)
     if not fp_res["ok"]:
         # Quality check failed: save attempt and return 'retake'
+        code = fp_res.get("code", "BAD_IMAGE")
+        reason_en = fp_res.get("reason_en", get_message(code, "en", default="Photo quality check failed"))
+        reason_bn = fp_res.get("reason_bn", get_message(code, "bn", default="ছবির গুণমান উপযুক্ত নয়। অনুগ্রহ করে আবার ছবি তুলুন।"))
         rec = Verification(
             qr_id=qr_id,
             upload_id=upload_id,
             image_path=primary_verify_photo,
             score=None,
             match="retake",
-            reason=fp_res.get("reason_en", "Photo quality check failed"),
+            reason=reason_en,
+            code=code,
+            message_en=reason_en,
+            message_bn=reason_bn,
             by_user=user.name,
             at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
         )
@@ -118,13 +142,15 @@ def verify_saree_authenticity(
         return {
             "result": "retake",
             "score": None,
-            "reason": fp_res.get("reason_en", "Photograph quality unsuitable. Please retake photo."),
+            "reason": reason_en,
+            "code": code,
+            "message_en": reason_en,
+            "message_bn": reason_bn,
         }
 
     verify_fp = fp_res["fingerprint"]
 
     # 8. Compare against registered fingerprint
-    # Find matching SIFT file if available
     reg_residual = saree.fingerprint_path
     reg_sift = str(Path(reg_residual).parent / Path(reg_residual).name.replace("residual.npz", "sift.npz"))
     if not Path(reg_sift).exists():
@@ -137,6 +163,9 @@ def verify_saree_authenticity(
     result_decision = match_result["result"]  # genuine | no_match | not_calibrated | retake
     result_score = match_result.get("score")
     result_reason = match_result.get("reason")
+    result_code = match_result.get("code", result_decision.upper())
+    result_message_en = match_result.get("message_en", result_reason)
+    result_message_bn = match_result.get("message_bn", get_message(result_code, "bn"))
 
     # 9. Store verification attempt in database
     rec = Verification(
@@ -146,6 +175,9 @@ def verify_saree_authenticity(
         score=result_score,
         match=result_decision,
         reason=result_reason,
+        code=result_code,
+        message_en=result_message_en,
+        message_bn=result_message_bn,
         by_user=user.name,
         at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
     )
@@ -156,4 +188,7 @@ def verify_saree_authenticity(
         "result": result_decision,
         "score": result_score,
         "reason": result_reason,
+        "code": result_code,
+        "message_en": result_message_en,
+        "message_bn": result_message_bn,
     }

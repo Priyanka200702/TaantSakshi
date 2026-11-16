@@ -43,4 +43,7 @@ def verify_saree(
         result=res["result"],
         score=res["score"],
         reason=res["reason"],
+        code=res.get("code"),
+        message_en=res.get("message_en"),
+        message_bn=res.get("message_bn"),
     )

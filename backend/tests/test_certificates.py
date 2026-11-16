@@ -69,7 +69,14 @@ def test_37_to_39_and_41_state_4_full_certificate(client, token_staff_a, test_en
     assert "TS-COOPA001" in html_en
     assert "Verified Genuine Handloom" in html_en
     assert "Dhaniakhali Weavers Society" in html_en
-    assert "Grade A" in html_en
+    # Task 2: Under provisional_tpi_only, no letter grade is faked
+    assert "Quality grade: provisional / not yet assigned" in html_en
+    assert "Grade A" not in html_en
+
+    # Task 11: Display photo endpoint works
+    resp_photo = client.get("/c/TS-COOPA001/photo")
+    assert resp_photo.status_code == status.HTTP_200_OK
+    assert "image/jpeg" in resp_photo.headers["content-type"]
 
     # Test 38: Weaver WVR-A1 has show_name_publicly=True -> name appears
     assert "Amiya Basak" in html_en
@@ -116,12 +123,19 @@ def test_38_weaver_privacy_hidden(client, token_staff_a, test_env, sample_image_
 
 
 def test_40_repeated_scan_warning(client, test_env):
-    """Test 40: Warning banner appears after scan count exceeds configured threshold."""
+    """Test 40 / Task 9: Warning banner appears after distinct IP scan count exceeds threshold."""
     session = test_env["session"]
 
-    # Create 12 scan logs for TS-COOPA001 (threshold is 10)
-    for _ in range(12):
-        client.get("/c/TS-COOPA001")
+    # Scans from the SAME IP do not trigger warning even with 15 scans
+    for _ in range(15):
+        client.get("/c/TS-COOPA001", headers={"X-Forwarded-For": "10.0.0.1"})
+
+    resp_same = client.get("/c/TS-COOPA001?lang=en", headers={"X-Forwarded-For": "10.0.0.1"})
+    assert "Notice: Possible Duplicate Scan" not in resp_same.text
+
+    # Distinct IPs exceeding threshold (threshold is 10) trigger warning
+    for i in range(12):
+        client.get("/c/TS-COOPA001", headers={"X-Forwarded-For": f"192.168.1.{i+1}"})
 
     resp = client.get("/c/TS-COOPA001?lang=en")
     html = resp.text

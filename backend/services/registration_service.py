@@ -71,6 +71,20 @@ def validate_and_register_saree(
 
     burst_photos = photos[:5]  # Accept up to 5 burst frames
 
+    # Task 4: If tag was released back to 'blank' after a previous quality failure,
+    # clean up the old failed Saree record, its SareePhoto records, and any stale files.
+    old_saree = db.query(Saree).filter(Saree.qr_id == qr_id).first()
+    if old_saree:
+        old_photos = db.query(SareePhoto).filter(SareePhoto.saree_qr_id == qr_id).all()
+        for p in old_photos:
+            try:
+                Path(p.photo_path).unlink(missing_ok=True)
+            except Exception:
+                pass
+            db.delete(p)
+        db.delete(old_saree)
+        db.flush()
+
     # 8. Save original photographs safely to storage/images/{qr_id}/
     saree_dir = IMAGES_DIR / qr_id
     saree_dir.mkdir(parents=True, exist_ok=True)
@@ -79,7 +93,11 @@ def validate_and_register_saree(
     for idx, upload_file in enumerate(burst_photos):
         ext = Path(upload_file.filename or "image.jpg").suffix.lower()
         if ext not in ALLOWED_EXTENSIONS:
-            ext = ".jpg"
+            raise_bilingual_error(
+                status.HTTP_400_BAD_REQUEST,
+                "BAD_IMAGE",
+                f"Unsupported file extension {ext}. Allowed: {', '.join(sorted(ALLOWED_EXTENSIONS))}",
+            )
         target_file = saree_dir / f"frame_{idx:02d}{ext}"
 
         # Write original content without altering compression, filters, or resolution

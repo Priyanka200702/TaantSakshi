@@ -55,6 +55,16 @@ class User(Base):
     tag_logs = relationship("TagGenerationLog", back_populates="generator")
 
 
+class LoginAttempt(Base):
+    """Tracks login attempts to lock out brute-force attacks (5 wrong PINs -> 15 min lock)."""
+    __tablename__ = "login_attempts"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    phone = Column(String(32), index=True, nullable=False)
+    attempted_at = Column(DateTime, default=utc_now, nullable=False, index=True)
+    success = Column(Boolean, default=False, nullable=False)
+
+
 class Weaver(Base):
     """Stores registered weavers and their public-name permission."""
     __tablename__ = "weavers"
@@ -153,6 +163,9 @@ class Verification(Base):
     score = Column(Float, nullable=True)
     match = Column(String(32), nullable=False)  # genuine, no_match, not_calibrated, retake
     reason = Column(Text, nullable=True)
+    code = Column(String(64), nullable=True)
+    message_en = Column(Text, nullable=True)
+    message_bn = Column(Text, nullable=True)
     by_user = Column(String(64), nullable=True)
     at = Column(DateTime, default=utc_now, nullable=False)
 

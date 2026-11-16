@@ -100,3 +100,57 @@ def test_16_used_tag_rejected(client, token_staff_a, test_env, sample_image_byte
     resp = client.post("/saree", data=data, files=files, headers=headers)
     assert resp.status_code == status.HTTP_409_CONFLICT
     assert resp.json()["code"] == "TAG_USED"
+
+
+def test_retake_workflow_after_quality_failure(client, token_staff_a, test_env, sample_image_bytes, sample_tilted_image_bytes):
+    """
+    Task 4: Retake bug fix test:
+      fail quality check -> release tag to blank -> retake with new upload_id -> queued -> done.
+    Verifies that UNIQUE sarees.qr_id constraint collision does not occur.
+    """
+    from backend.worker.worker import process_one_job
+    session = test_env["session"]
+    headers = {"Authorization": f"Bearer {token_staff_a}"}
+
+    # 1. Initial attempt with tilted photo (fails quality check)
+    data1 = {
+        "qr_id": "TS-COOPA001",
+        "batch_id": "BATCH-A-01",
+        "upload_id": "upload-fail-001",
+    }
+    files1 = [("photos", ("tilted.jpg", io.BytesIO(sample_tilted_image_bytes), "image/jpeg"))]
+    resp1 = client.post("/saree", data=data1, files=files1, headers=headers)
+    assert resp1.status_code == status.HTTP_200_OK
+
+    # Process: worker fails on quality and releases tag back to blank
+    assert process_one_job(session) is True
+    session.expire_all()
+    saree1 = session.query(Saree).filter(Saree.qr_id == "TS-COOPA001").first()
+    tag = session.query(Tag).filter(Tag.qr_id == "TS-COOPA001").first()
+    assert saree1.proc_status == "failed"
+    assert tag.status == "blank"
+
+    # 2. Retake registration with NEW upload_id and clean photo
+    data2 = {
+        "qr_id": "TS-COOPA001",
+        "batch_id": "BATCH-A-01",
+        "upload_id": "upload-retake-002",
+    }
+    files2 = [("photos", ("clean.jpg", io.BytesIO(sample_image_bytes), "image/jpeg"))]
+    resp2 = client.post("/saree", data=data2, files=files2, headers=headers)
+    assert resp2.status_code == status.HTTP_200_OK
+    assert resp2.json()["status"] == "queued"
+
+    # Verify old failed record was replaced with queued record
+    session.expire_all()
+    saree2 = session.query(Saree).filter(Saree.qr_id == "TS-COOPA001").first()
+    assert saree2.upload_id == "upload-retake-002"
+    assert saree2.proc_status == "queued"
+
+    # 3. Process retake: must successfully finish (status 'done')
+    assert process_one_job(session) is True
+    session.expire_all()
+    saree_done = session.query(Saree).filter(Saree.qr_id == "TS-COOPA001").first()
+    assert saree_done.proc_status == "done"
+    assert saree_done.epi is not None
+    assert saree_done.ppi is not None

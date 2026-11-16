@@ -5,12 +5,13 @@ Public digital authenticity certificate endpoint: GET /c/{qr_id}
 from __future__ import annotations
 
 import datetime
-from fastapi import APIRouter, Depends, Request
-from fastapi.responses import HTMLResponse
+from pathlib import Path
+from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
-from backend.config import BACKEND_DIR, SCAN_WARNING_THRESHOLD
+from backend.config import BACKEND_DIR, SCAN_WARNING_THRESHOLD, SCAN_WINDOW_HOURS
 from backend.database import get_db
 from backend.models import Batch, CertificateScan, Coop, Saree, Tag, Weaver
 
@@ -45,10 +46,13 @@ def view_public_certificate(
     tag = db.query(Tag).filter(Tag.qr_id == clean_qr).first()
 
     # 2. Log Certificate Scan if tag exists or log probe
-    client_ip = request.client.host if request.client else "unknown"
+    forwarded_for = request.headers.get("x-forwarded-for")
+    if forwarded_for:
+        client_ip = forwarded_for.split(",")[0].strip()
+    else:
+        client_ip = request.client.host if request.client else "unknown"
     user_agent = request.headers.get("user-agent", "unknown")[:500]
 
-    scan_count = 0
     warning_repeated_scan = False
 
     if tag:
@@ -62,10 +66,19 @@ def view_public_certificate(
         db.add(scan_log)
         db.commit()
 
-        # Count total scans for this QR ID
-        scan_count = db.query(CertificateScan).filter(CertificateScan.qr_id == clean_qr).count()
-        # Warning if scanned many times or if scanned after marked sold
-        if scan_count >= SCAN_WARNING_THRESHOLD or tag.status == "sold":
+        # Task 9: Count distinct devices/IPs within time window (not total scans)
+        window_start = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None) - datetime.timedelta(hours=SCAN_WINDOW_HOURS)
+        distinct_devices = (
+            db.query(CertificateScan.ip_address)
+            .filter(
+                CertificateScan.qr_id == clean_qr,
+                CertificateScan.scanned_at >= window_start,
+            )
+            .distinct()
+            .count()
+        )
+        # Warning if distinct devices in time window exceed threshold or if tag is marked sold
+        if distinct_devices >= SCAN_WARNING_THRESHOLD or tag.status == "sold":
             warning_repeated_scan = True
 
     # 3. Determine State
@@ -156,3 +169,33 @@ def view_public_certificate(
             "warning_repeated_scan": warning_repeated_scan,
         },
     )
+
+
+@router.get("/c/{qr_id}/photo")
+def get_certificate_photo(qr_id: str, db: Session = Depends(get_db)):
+    """
+    Task 11: Serve a downscaled display copy of the registered fabric photo.
+    Never exposes internal fingerprint (.npz) files.
+    """
+    clean_qr = qr_id.strip()
+    saree = db.query(Saree).filter(Saree.qr_id == clean_qr).first()
+    if not saree or not saree.image_path:
+        raise HTTPException(status_code=404, detail="Photo not registered for this saree")
+
+    orig_path = Path(saree.image_path)
+    if not orig_path.exists():
+        raise HTTPException(status_code=404, detail="Registered photo file not found on disk")
+
+    # Generate or reuse cached downscaled display copy
+    display_path = orig_path.parent / f"{orig_path.stem}_display.jpg"
+    if not display_path.exists():
+        try:
+            from PIL import Image
+            with Image.open(orig_path) as im:
+                im = im.convert("RGB")
+                im.thumbnail((800, 800))
+                im.save(display_path, "JPEG", quality=85)
+        except Exception:
+            return FileResponse(str(orig_path), media_type="image/jpeg")
+
+    return FileResponse(str(display_path), media_type="image/jpeg")

@@ -65,3 +65,21 @@ def test_11_to_13_tag_generation_api(client, token_staff_a, test_env):
     assert log_entry.coop_id == "COOP-A"
     assert log_entry.user_id == "USR-STAFF-A"
     assert Path(log_entry.pdf_path).exists()
+
+    # Task 6: Secure PDF download checks
+    pdf_filename = Path(data["pdf_url"]).name
+
+    # 1. Unauthenticated download fails with 401
+    resp_unauth = client.get(f"/tags/pdf/{pdf_filename}")
+    assert resp_unauth.status_code == status.HTTP_401_UNAUTHORIZED
+
+    # 2. Authenticated download by Coop-A staff succeeds
+    resp_coop_a = client.get(f"/tags/pdf/{pdf_filename}", headers=headers)
+    assert resp_coop_a.status_code == status.HTTP_200_OK
+    assert "application/pdf" in resp_coop_a.headers["content-type"]
+
+    # 3. Authenticated download by Coop-B staff is rejected with 403 Forbidden
+    from backend.auth import create_access_token
+    token_staff_b = create_access_token({"sub": "USR-STAFF-B", "role": "staff", "coop_id": "COOP-B", "name": "Staff B"})
+    resp_coop_b = client.get(f"/tags/pdf/{pdf_filename}", headers={"Authorization": f"Bearer {token_staff_b}"})
+    assert resp_coop_b.status_code == status.HTTP_403_FORBIDDEN

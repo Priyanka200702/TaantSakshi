@@ -30,6 +30,24 @@ def test_02_login_incorrect_credentials(client):
     assert "Wrong phone or PIN" in resp2.text
 
 
+def test_login_rate_limiting_lockout(client):
+    """Task 7: Lock phone number for 15 min after 5 wrong PINs."""
+    phone = "9000000001"
+    # 5 failed attempts
+    for _ in range(5):
+        resp = client.post("/login", json={"phone": phone, "pin": "0000"})
+        assert resp.status_code == status.HTTP_401_UNAUTHORIZED
+
+    # 6th attempt must be locked out with HTTP 429
+    resp_locked = client.post("/login", json={"phone": phone, "pin": "1234"})
+    assert resp_locked.status_code == status.HTTP_429_TOO_MANY_REQUESTS
+    assert "locked" in resp_locked.text.lower()
+
+    # Another phone is NOT locked
+    resp_other = client.post("/login", json={"phone": "9000000002", "pin": "1234"})
+    assert resp_other.status_code == status.HTTP_200_OK
+
+
 def test_03_token_authentication(client, token_staff_a):
     """Test 3: Valid bearer token successfully accesses protected route."""
     headers = {"Authorization": f"Bearer {token_staff_a}"}
@@ -59,3 +77,22 @@ def test_05_role_based_access(client, token_seller, token_staff_a):
     headers_staff = {"Authorization": f"Bearer {token_staff_a}"}
     resp2 = client.post("/tags/generate", json={"count": 54}, headers=headers_staff)
     assert resp2.status_code == status.HTTP_200_OK
+
+
+def test_secret_key_required_from_env():
+    """Task 1: Verify backend refuses to start without SECRET_KEY environment variable."""
+    import os
+    import subprocess
+    import sys
+
+    env = dict(os.environ)
+    env.pop("SECRET_KEY", None)
+    res = subprocess.run(
+        [sys.executable, "-c", "import os; os.environ.pop('SECRET_KEY', None); from backend import config"],
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+    assert res.returncode != 0
+    assert "SECRET_KEY environment variable is required" in res.stderr
+

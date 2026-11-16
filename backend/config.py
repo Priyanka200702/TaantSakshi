@@ -31,16 +31,19 @@ for directory in [STORAGE_DIR, IMAGES_DIR, FINGERPRINTS_DIR, TAGS_PDF_DIR, BACKU
 DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{STORAGE_DIR / 'tantsaakshi.db'}")
 
 # Security
-SECRET_KEY = os.getenv("SECRET_KEY", "tantsaakshi-secret-key-production-change-2026-secure")
+SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY:
+    raise RuntimeError("SECRET_KEY environment variable is required; refuse to start without it.")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 30  # 30 days token expiry
 
 # Upload limits
 MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024  # 25 MB per image
-ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png"}
+ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".heic", ".heif"}
 
 # Anti-counterfeit scan warning threshold
 SCAN_WARNING_THRESHOLD = int(os.getenv("SCAN_WARNING_THRESHOLD", "10"))
+SCAN_WINDOW_HOURS = int(os.getenv("SCAN_WINDOW_HOURS", "24"))
 
 # Bilingual error and rejection messages
 BILINGUAL_MESSAGES: dict[str, dict[str, str]] = {
@@ -75,6 +78,10 @@ BILINGUAL_MESSAGES: dict[str, dict[str, str]] = {
     "ALIASING": {
         "en": "Camera is too far away to resolve individual threads. Please move closer.",
         "bn": "ক্যামেরাটি খুব দূরে থাকায় পৃথক সুতা বোঝা যাচ্ছে না। অনুগ্রহ করে আরও কাছে আনুন।",
+    },
+    "WEAVE_UNCLEAR": {
+        "en": "Weave unclear: move the card to another plain spot",
+        "bn": "বুনন অস্পষ্ট: কার্ডটি অন্য একটি সাধারণ জায়গায় সরান",
     },
     "DESIGN_AREA": {
         "en": "Measurement window is placed on an ornamental motif. Please place it on plain woven ground fabric.",
@@ -119,6 +126,34 @@ BILINGUAL_MESSAGES: dict[str, dict[str, str]] = {
     "FINGERPRINT_NOT_FOUND": {
         "en": "Original registered fingerprint not found for this saree.",
         "bn": "এই শাড়ির মূল নিবন্ধিত ফিঙ্গারপ্রিন্ট পাওয়া যায়নি।",
+    },
+    "GENUINE": {
+        "en": "Fabric fingerprint matches registered weave.",
+        "bn": "কাপড়ের ফিঙ্গারপ্রিন্ট নিবন্ধিত বুননের সাথে মিলে গেছে।",
+    },
+    "NO_MATCH": {
+        "en": "Fabric fingerprint does not match registered weave.",
+        "bn": "কাপড়ের ফিঙ্গারপ্রিন্ট নিবন্ধিত বুননের সাথে মেলেনি।",
+    },
+    "NOT_CALIBRATED": {
+        "en": "Matching threshold is not yet calibrated on real fabric photos. Verification is pending calibration.",
+        "bn": "আসল কাপড়ের ছবির উপর ম্যাচিং থ্রেশহোল্ড এখনও ক্যালিব্রেট করা হয়নি। যাচাইকরণ ক্যালিব্রেশনের অপেক্ষায় রয়েছে।",
+    },
+    "RETAKE": {
+        "en": "Photograph quality unsuitable. Please retake photo.",
+        "bn": "ছবির গুণমান উপযুক্ত নয়। অনুগ্রহ করে আবার ছবি তুলুন।",
+    },
+    "REGISTRATION_PENDING": {
+        "en": "Saree registration image processing is still underway. Please wait for completion.",
+        "bn": "শাড়ির নিবন্ধন প্রক্রিয়া এখনও চলছে। অনুগ্রহ করে অপেক্ষা করুন।",
+    },
+    "REGISTRATION_FAILED": {
+        "en": "Original saree registration failed quality analysis. Verification cannot be performed.",
+        "bn": "মূল শাড়ির নিবন্ধন গুণমান পরীক্ষায় ব্যর্থ হয়েছে। যাচাইকরণ সম্ভব নয়।",
+    },
+    "MATCH_FAILED": {
+        "en": "Matching failed due to processing error.",
+        "bn": "ম্যাচিং প্রক্রিয়া ব্যর্থ হয়েছে।",
     },
 }
 
