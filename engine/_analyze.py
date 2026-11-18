@@ -317,6 +317,8 @@ def analyze(
         "px_per_thread": fft_res.get("px_per_thread", {}),
         "ends_per_inch": fft_res.get("ends_per_inch"),
         "picks_per_inch": fft_res.get("picks_per_inch"),
+        "visible_rows_per_inch": fft_res.get("visible_rows_per_inch"),
+        "weave": fft_res.get("weave"),
         "warp_angle_deg": fft_res.get("warp_angle_deg"),
         "weft_angle_deg": fft_res.get("weft_angle_deg"),
         "irregularity": fft_res.get("irregularity", {}),

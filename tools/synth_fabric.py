@@ -437,3 +437,93 @@ def make_card_scene(
 def to_uint8(img: np.ndarray) -> np.ndarray:
     """Convert float32 [0,1] image to uint8 [0,255]."""
     return (np.clip(img, 0.0, 1.0) * 255).astype(np.uint8)
+
+
+# ---------------------------------------------------------------------------
+# True interlacement rendering (plain / matt / rib / twill)
+# ---------------------------------------------------------------------------
+
+# Weave matrices: rows = picks (j), cols = ends (i); 1 = weft on top at (j, i).
+WEAVES: dict[str, np.ndarray] = {
+    "plain":      np.array([[1, 0], [0, 1]]),
+    # 2/2 matt (basket): ends AND picks work in pairs
+    "matt22":     np.array([[1, 1, 0, 0], [1, 1, 0, 0], [0, 0, 1, 1], [0, 0, 1, 1]]),
+    # 2/2 weft rib: ends work in pairs, picks single
+    "weft_rib22": np.array([[1, 1, 0, 0], [0, 0, 1, 1]]),
+    # 1/2 twill: weft over 1, under 2, shifting one end per pick
+    "twill12":    np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]]),
+}
+
+
+@dataclass
+class WovenSpec:
+    """Synthetic fabric drawn from a real interlacement matrix."""
+    weave: str = "plain"
+    ends_per_inch: float = 60.0
+    picks_per_inch: float = 60.0
+    px_per_mm: float = 40.0
+    window_mm: float = 19.0
+    grid_angle_deg: float = 0.0
+    weft_brightness: float = 0.80     # weft floats (bright in the red saree)
+    warp_brightness: float = 0.50
+    gap_brightness: float = 0.15
+    yarn_fill: float = 0.85           # yarn diameter / pitch
+    merge_paired_picks: bool = False  # picks sharing a shed pack into one band (no seam)
+    gaussian_blur_sigma: float = 1.0
+    noise_sigma: float = 0.02
+    seed: int | None = 7
+
+
+def _yarn_profile(frac: np.ndarray, fill: float) -> np.ndarray:
+    """Raised-cosine cross-section of a yarn centred in its cell (frac in [0,1))."""
+    d = np.abs(frac - 0.5) / (0.5 * fill)
+    return np.where(d < 1.0, 0.5 * (1.0 + np.cos(np.pi * np.clip(d, 0, 1))), 0.0)
+
+
+def make_woven(spec: WovenSpec) -> tuple[np.ndarray, FabricGroundTruth]:
+    """Render a woven structure: each (pick, end) cell shows whichever yarn is on top."""
+    if spec.weave not in WEAVES:
+        raise ValueError(f"unknown weave {spec.weave!r}; choose from {sorted(WEAVES)}")
+    W = WEAVES[spec.weave]
+    rng = np.random.default_rng(spec.seed)
+    N = int(round(spec.window_mm * spec.px_per_mm))
+    ys, xs = np.mgrid[0:N, 0:N].astype(np.float64)
+    a = math.radians(spec.grid_angle_deg)
+    xr = math.cos(a) * xs + math.sin(a) * ys
+    yr = -math.sin(a) * xs + math.cos(a) * ys
+
+    p_end = spec.px_per_mm * 25.4 / spec.ends_per_inch
+    p_pick = spec.px_per_mm * 25.4 / spec.picks_per_inch
+    gi, fx = np.divmod(xr / p_end, 1.0)
+    gj, fy = np.divmod(yr / p_pick, 1.0)
+    gi = gi.astype(np.int64)
+    gj = gj.astype(np.int64)
+    weft_up = W[gj % W.shape[0], gi % W.shape[1]].astype(bool)
+
+    if spec.merge_paired_picks and spec.weave == "matt22":
+        # Two picks in one shed lie together: one band two picks tall.
+        fy_band = ((gj % 2) + fy) / 2.0
+        weft_prof = _yarn_profile(fy_band, spec.yarn_fill)
+    else:
+        weft_prof = _yarn_profile(fy, spec.yarn_fill)
+    warp_prof = _yarn_profile(fx, spec.yarn_fill)
+
+    g = spec.gap_brightness
+    img_weft = g + (spec.weft_brightness - g) * weft_prof
+    img_warp = g + (spec.warp_brightness - g) * warp_prof
+    img = np.where(weft_up, img_weft, img_warp)
+
+    if spec.gaussian_blur_sigma > 0:
+        img = cv2.GaussianBlur(img.astype(np.float32), (0, 0), spec.gaussian_blur_sigma)
+    if spec.noise_sigma > 0:
+        img = img + rng.normal(0, spec.noise_sigma, img.shape)
+    img = np.clip(img, 0.0, 1.0).astype(np.float32)
+
+    gt = FabricGroundTruth(
+        ends_per_inch=spec.ends_per_inch,
+        picks_per_inch=spec.picks_per_inch,
+        px_per_mm=spec.px_per_mm,
+        window_mm=spec.window_mm,
+        grid_angle_deg=spec.grid_angle_deg,
+    )
+    return img, gt

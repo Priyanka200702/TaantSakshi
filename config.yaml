@@ -55,6 +55,13 @@ fft:
   max_tpi: 200                   # Thread band physical upper bound (threads per inch)
   expected_axis_tol_deg: 20      # Wedge half-width to search near card axes (0° and 90°)
   cross_check_tol: 0.05          # 1-D vs 2-D period agreement tolerance (fraction)
+  # Weave probe: when ends work in pairs (row-to-row shift = 2 ends), one visible weft row
+  # may be 1 pick (2/2 weft rib) or 2 picks lying together (2/2 matt). The photo alone
+  # cannot tell. "ambiguous" reports visible rows + flags; "matt" doubles; "rib" keeps.
+  # Set only after a hand count with a magnifier on the cooperative's own sarees.
+  paired_ends_pick_policy: "ambiguous"
+  weave_probe_min_margin: 0.04   # ACF margin needed to call a row shift
+  weave_probe_sym_tol: 0.5
 
 defects:
   notch_radius: 3

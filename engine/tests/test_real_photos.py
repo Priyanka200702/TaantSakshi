@@ -103,8 +103,9 @@ def test_real_red_handloom_130240(tmp_path):
       - ok=True
       - warp peak angle within ±20° of 0° (card axis)
       - weft peak angle within ±20° of 90° (card axis)
-      - ends_per_inch in [35, 60]
-      - picks_per_inch in [35, 60]
+      - ends within 5% of hand count (53.3 epi)
+      - weave probe = paired_ends, pick count flagged ambiguous,
+        hand count 88.9 ppi within 5% of one candidate
     """
     debug_dir = tmp_path / "debug_130240"
     debug_dir.mkdir(parents=True, exist_ok=True)
@@ -134,14 +135,22 @@ def test_real_red_handloom_130240(tmp_path):
         f"weft angle {weft_ang:.1f}° not within ±20° of card axis (90°)"
     )
 
-    # TPI range check (temporary, until hand count provided)
-    TPI_LO, TPI_HI = 35, 60
-    assert TPI_LO <= epi <= TPI_HI, (
-        f"ends_per_inch {epi:.1f} not in [{TPI_LO}, {TPI_HI}] (temporary range)"
+    # Hand count on the photo (1 mm grid, 10 mm square): 21 ends/cm = 53.3 epi,
+    # 35 picks/cm = 88.9 ppi.  Ends must match within 5%.
+    HAND_EPI, HAND_PPI = 53.3, 88.9
+    assert abs(epi - HAND_EPI) / HAND_EPI <= 0.05, f"ends_per_inch {epi:.1f} vs hand {HAND_EPI}"
+
+    # Rows shift by 2 ends -> ends work in pairs.  One visible row may be 1 or 2 picks,
+    # so the engine must flag ambiguity and list the hand count among its candidates.
+    weave = res.get("weave") or {}
+    assert weave.get("class") == "paired_ends", f"weave probe: {weave}"
+    assert weave.get("row_shift_ends") == 2
+    assert weave.get("pick_count_ambiguous") is True
+    cands = weave.get("picks_candidates", [])
+    assert any(abs(c - HAND_PPI) / HAND_PPI <= 0.05 for c in cands), (
+        f"hand count {HAND_PPI} ppi not within 5% of candidates {cands}"
     )
-    assert TPI_LO <= ppi <= TPI_HI, (
-        f"picks_per_inch {ppi:.1f} not in [{TPI_LO}, {TPI_HI}] (temporary range)"
-    )
+    assert abs(ppi - res["visible_rows_per_inch"]) < 1e-6  # default policy reports rows
 
     # Debug images should be present
     assert (debug_dir / "spectrum_peaks.png").exists(), "spectrum_peaks.png not saved"

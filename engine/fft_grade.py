@@ -214,6 +214,28 @@ def run_fft_grade(
             px_per_mm=px_per_mm,
         )
 
+    # ---- Weave structure probe (row-to-row shift) ---------------------------
+    weave_info = _probe_weave_structure(img_flat, p_warp, p_weft, N, fft_cfg)
+    picks_reported = weft_c["threads_per_inch"]
+    rows_tpi = weft_c["threads_per_inch"]
+    policy = str(fft_cfg.get("paired_ends_pick_policy", "ambiguous"))
+    if weave_info["class"] == "paired_ends":
+        weave_info["picks_candidates"] = [rows_tpi, 2.0 * rows_tpi]
+        if policy == "matt":
+            picks_reported = 2.0 * rows_tpi
+            weave_info["pick_count_ambiguous"] = False
+            weave_info["picks_rule"] = "matt: 2 picks per visible row (config)"
+        elif policy == "rib":
+            weave_info["pick_count_ambiguous"] = False
+            weave_info["picks_rule"] = "rib: 1 pick per visible row (config)"
+        else:
+            weave_info["pick_count_ambiguous"] = True
+            weave_info["picks_rule"] = "ambiguous: 1 or 2 picks per visible row"
+    else:
+        weave_info["picks_candidates"] = [rows_tpi]
+        weave_info["pick_count_ambiguous"] = False
+        weave_info["picks_rule"] = "1 pick per visible row"
+
     t_total = (time.perf_counter() - t0) * 1000
 
     return {
@@ -221,7 +243,9 @@ def run_fft_grade(
         "code": "OK",
         "reason": "",
         "ends_per_inch": warp_c["threads_per_inch"],
-        "picks_per_inch": weft_c["threads_per_inch"],
+        "picks_per_inch": picks_reported,
+        "visible_rows_per_inch": rows_tpi,
+        "weave": weave_info,
         "warp_angle_deg": warp_c["angle_deg"],
         "weft_angle_deg": weft_c["angle_deg"],
         "rotation_angle_deg": rotation_angle_deg,
@@ -1075,3 +1099,94 @@ def _find_two_peaks(
     band_vals = F[band_mask]
     med = float(np.median(band_vals)) if band_vals.size > 0 else 1.0
     return _find_two_peaks_global(F, band_mask, N, cy, cx, excl_deg, perp_tol, med)
+
+# ---------------------------------------------------------------------------
+# Weave structure probe
+# ---------------------------------------------------------------------------
+
+def _shifted_acf(img_flat: np.ndarray) -> np.ndarray:
+    """Normalised 2-D autocorrelation (Hann taper bias removed), centre at [N, N]."""
+    N = img_flat.shape[0]
+    w = np.outer(np.hanning(N), np.hanning(N))
+
+    def _acf(x: np.ndarray) -> np.ndarray:
+        P = np.zeros((2 * N, 2 * N))
+        P[:N, :N] = x
+        F = np.fft.fft2(P)
+        return np.fft.fftshift(np.real(np.fft.ifft2(np.abs(F) ** 2)))
+
+    A = _acf(img_flat.astype(np.float64) * w) / np.maximum(_acf(w), 1e-9)
+    return A / (A[N, N] + 1e-12)
+
+
+def _probe_weave_structure(
+    img_flat: np.ndarray, p_warp: dict, p_weft: dict, N: int, fft_cfg: dict
+) -> dict:
+    """
+    Measure how far the interlacing pattern shifts from one visible weft row to the next,
+    in units of the measured end pitch.  Uses the autocorrelation at a lag of exactly one
+    visible row (along the weft-peak direction) plus m end pitches (along the warp-peak
+    direction), m = -3..3.
+
+      shift ±1, symmetric  -> plain weave: each visible row is one pick.
+      shift ±2, symmetric  -> ends work in pairs (2/2 matt or 2/2 weft rib). In a matt the
+                              two picks of a shed lie together as one visible row, so the
+                              true pick count is 1x OR 2x the row count -> ambiguous.
+      shift +1 or -1 only  -> twill.
+      no clear winner      -> unclear (counts reported as measured).
+    """
+    from scipy.ndimage import map_coordinates
+
+    kw = math.hypot(p_warp["kx"], p_warp["ky"])
+    kr = math.hypot(p_weft["kx"], p_weft["ky"])
+    out: dict = {"class": "unclear", "row_shift_ends": None, "acf_row_lag": {}}
+    if kw <= 0 or kr <= 0:
+        return out
+    pw, pr = N / kw, N / kr
+    u = np.array([p_warp["kx"], p_warp["ky"]]) / kw   # across ends
+    v = np.array([p_weft["kx"], p_weft["ky"]]) / kr   # across rows
+    if v[1] < 0:
+        v = -v
+    if u[0] < 0:
+        u = -u
+
+    A = _shifted_acf(img_flat)
+    c0 = N
+
+    def _at(dx_px: float, dy_px: float) -> float:
+        # Best value within ±15% of an end pitch (tolerates small pitch error)
+        best = -1e9
+        for e in np.linspace(-0.15 * pw, 0.15 * pw, 7):
+            vec = (dx_px + e) * u + dy_px * v
+            val = float(map_coordinates(A, [[c0 + vec[1]], [c0 + vec[0]]], order=1)[0])
+            best = max(best, val)
+        return best
+
+    c = {m: _at(m * pw, pr) for m in range(-3, 4)}
+    out["acf_row_lag"] = {str(m): round(c[m], 4) for m in c}
+
+    min_margin = float(fft_cfg.get("weave_probe_min_margin", 0.04))
+    sym_tol = float(fft_cfg.get("weave_probe_sym_tol", 0.5))
+    base = max(c[0], 0.0)
+    # Symmetric evidence: a genuine row shift of m ends raises the ACF at BOTH
+    # (+1 row, +m ends) and (+1 row, -m ends). Using min() of the two makes the
+    # test robust to one-sided slub/noise spikes that would otherwise inflate a
+    # competitor and mask the real shift.
+    sym = {1: min(c[1], c[-1]), 2: min(c[2], c[-2])}
+    best_m = max((1, 2), key=lambda m: sym[m])
+    competitor = max([base] + [sym[m] for m in (1, 2) if m != best_m])
+    margin = sym[best_m] - competitor
+    out["margin"] = round(margin, 4)
+
+    if sym[best_m] > 0 and margin >= min_margin:
+        out["class"] = "plain" if best_m == 1 else "paired_ends"
+        out["row_shift_ends"] = best_m
+        return out
+
+    # Twill: one single-sided row shift dominates and neither symmetric multiple
+    # is present (so it is not a mis-scored plain or paired weave).
+    hi, lo = max(c[1], c[-1]), min(c[1], c[-1])
+    if hi - base >= min_margin and lo < sym_tol * hi:
+        out["class"] = "twill"
+        out["row_shift_ends"] = 1 if c[1] >= c[-1] else -1
+    return out
