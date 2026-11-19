@@ -59,7 +59,7 @@ fft:
   # may be 1 pick (2/2 weft rib) or 2 picks lying together (2/2 matt). The photo alone
   # cannot tell. "ambiguous" reports visible rows + flags; "matt" doubles; "rib" keeps.
   # Set only after a hand count with a magnifier on the cooperative's own sarees.
-  paired_ends_pick_policy: "ambiguous"
+  paired_ends_pick_policy: "matt"     # hand count on red saree: 35 picks/cm = 2 per visible row
   weave_probe_min_margin: 0.04   # ACF margin needed to call a row shift
   weave_probe_sym_tol: 0.5
 

@@ -20,10 +20,16 @@ from tools.synth_fabric import WovenSpec, make_woven  # noqa: E402
 TOL = 0.02
 
 
-def _run(**kw):
+def _cfg(policy: str = "ambiguous") -> dict:
+    """Config with an explicit pick policy, so tests don't depend on config.yaml."""
+    cfg = get_config()
+    return {**cfg, "fft": {**cfg["fft"], "paired_ends_pick_policy": policy}}
+
+
+def _run(policy: str = "ambiguous", **kw):
     kw.setdefault("gaussian_blur_sigma", 1.5)
     img, gt = make_woven(WovenSpec(**kw))
-    res = run_fft_grade(img, gt.px_per_mm, get_config())
+    res = run_fft_grade(img, gt.px_per_mm, _cfg(policy))
     assert res["ok"], res
     return res, gt
 
@@ -65,8 +71,7 @@ def test_matt_merged_picks_flags_ambiguous_true_count_second(angle):
 
 
 def test_matt_policy_doubles_when_configured():
-    cfg = get_config()
-    cfg2 = {**cfg, "fft": {**cfg["fft"], "paired_ends_pick_policy": "matt"}}
+    cfg2 = _cfg("matt")
     img, gt = make_woven(WovenSpec(weave="matt22", ends_per_inch=53.3, picks_per_inch=88.9,
                                    merge_paired_picks=True, gaussian_blur_sigma=1.5))
     res = run_fft_grade(img, gt.px_per_mm, cfg2)
@@ -109,7 +114,7 @@ def test_no_class_crossover_across_conditions(weave, merged):
         img, gt = make_woven(WovenSpec(
             weave=weave, ends_per_inch=e, picks_per_inch=p, merge_paired_picks=merged,
             grid_angle_deg=a, gaussian_blur_sigma=bl, noise_sigma=0.02, seed=sd))
-        res = run_fft_grade(img, gt.px_per_mm, get_config())
+        res = run_fft_grade(img, gt.px_per_mm, _cfg())
         if not res["ok"]:
             continue
         cls = res["weave"]["class"]

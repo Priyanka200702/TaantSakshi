@@ -145,12 +145,24 @@ def test_real_red_handloom_130240(tmp_path):
     weave = res.get("weave") or {}
     assert weave.get("class") == "paired_ends", f"weave probe: {weave}"
     assert weave.get("row_shift_ends") == 2
-    assert weave.get("pick_count_ambiguous") is True
     cands = weave.get("picks_candidates", [])
     assert any(abs(c - HAND_PPI) / HAND_PPI <= 0.05 for c in cands), (
         f"hand count {HAND_PPI} ppi not within 5% of candidates {cands}"
     )
-    assert abs(ppi - res["visible_rows_per_inch"]) < 1e-6  # default policy reports rows
+    rows = res["visible_rows_per_inch"]
+    from engine.config import get_config
+    policy = get_config()["fft"].get("paired_ends_pick_policy", "ambiguous")
+    if policy == "matt":
+        # 2 picks per visible row: reported picks must match the hand count
+        assert weave.get("pick_count_ambiguous") is False
+        assert abs(ppi - 2 * rows) < 1e-6
+        assert abs(ppi - HAND_PPI) / HAND_PPI <= 0.05, f"picks {ppi:.1f} vs hand {HAND_PPI}"
+    elif policy == "rib":
+        assert weave.get("pick_count_ambiguous") is False
+        assert abs(ppi - rows) < 1e-6
+    else:
+        assert weave.get("pick_count_ambiguous") is True
+        assert abs(ppi - rows) < 1e-6  # ambiguous reports visible rows
 
     # Debug images should be present
     assert (debug_dir / "spectrum_peaks.png").exists(), "spectrum_peaks.png not saved"
