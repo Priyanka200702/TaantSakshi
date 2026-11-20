@@ -853,7 +853,7 @@ footer {
             <div id="studioUnlistedList" style="margin-top:1rem;display:flex;flex-direction:column;gap:.65rem"></div>
 
             <p id="studioNoneUnlisted" style="display:none;font-size:.8rem;color:var(--text-muted);margin-top:.75rem">
-              Every certified saree already has its story. Register a new saree at the loom desk first.
+              No certified sarees yet. Register a saree at the loom desk first.
               <span style="font-family:'Noto Serif Bengali',serif;display:block;margin-top:.2rem">সব শাড়ির গল্প প্রকাশিত — আগে নতুন শাড়ি নিবন্ধন করুন।</span>
             </p>
 
@@ -885,8 +885,8 @@ footer {
               <audio id="studioAudioPlayback" controls style="width:100%;max-width:280px;height:40px;margin:0 auto"></audio>
               <div style="margin-top:1rem">
                 <button id="studioTranscribeBtn" class="btn-gold" onclick="transcribeStudioVoice()">
-                  <span id="studioTranscribeLabel">Fill a sample listing</span>
-                  <span style="font-family:'Noto Serif Bengali',serif;font-weight:400;text-transform:none;letter-spacing:0;font-size:.8rem;opacity:.8">· নমুনা তালিকা</span>
+                  <span id="studioTranscribeLabel">Fill listing from my voice</span>
+                  <span style="font-family:'Noto Serif Bengali',serif;font-weight:400;text-transform:none;letter-spacing:0;font-size:.8rem;opacity:.8">· কথা থেকে তালিকা</span>
                 </button>
               </div>
             </div>
@@ -952,7 +952,7 @@ footer {
             </div>
 
             <button id="studioPublishBtn" class="btn-luxe" onclick="publishStudioListing()" style="width:100%;justify-content:center;margin-top:1.25rem;padding:1rem">
-              <span id="studioPublishLabel">Publish to the world</span>
+              <span id="studioPublishLabel">Publish listing</span>
               <span style="font-family:'Noto Serif Bengali',serif;font-weight:400;text-transform:none;letter-spacing:0;font-size:.85rem;opacity:.8">· প্রকাশ করুন</span>
             </button>
           </section>
@@ -974,11 +974,11 @@ footer {
                   Send on WhatsApp
                 </button>
               </div>
-              <div id="studioShareSent" style="display:none;color:#15803d;font-size:.8rem;margin-top:.5rem;font-weight:600">✓ Delivered to buyer with certificate link</div>
+              <div id="studioShareSent" style="display:none;color:#15803d;font-size:.8rem;margin-top:.5rem;font-weight:600">✓ WhatsApp opened with the message and certificate link — tap Send</div>
             </div>
 
             <div style="display:flex;flex-wrap:wrap;gap:.6rem;margin-top:1.5rem;border-top:1px dashed var(--border-gold);padding-top:1rem">
-              <button class="btn-ghost" onclick="loadStudioOndc()" style="font-size:.68rem;padding:.5rem 1rem">ONDC payload</button>
+              <button class="btn-ghost" onclick="loadStudioOndc()" style="font-size:.68rem;padding:.5rem 1rem">ONDC preview</button>
               <a id="studioCertLink" href="#" target="_blank" class="btn-ghost" style="font-size:.68rem;padding:.5rem 1rem;text-decoration:none">View certificate</a>
               <button class="btn-luxe" onclick="resetStudio()" style="font-size:.68rem;padding:.5rem 1rem">New listing</button>
             </div>
@@ -993,7 +993,7 @@ footer {
 <div id="studioOndcModal" class="modal-backdrop hidden" onclick="closeStudioOndc()">
   <div class="modal-box" onclick="event.stopPropagation()" style="background:#2c1810;color:#f2e3c8;max-width:680px;padding:1.5rem">
     <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(212,175,55,.3);padding-bottom:.75rem">
-      <div class="eyebrow" style="color:var(--gold-light)">ONDC-ready catalogue item</div>
+      <div class="eyebrow" style="color:var(--gold-light)">ONDC catalogue preview</div>
       <div style="display:flex;gap:.75rem">
         <button onclick="copyStudioOndc()" class="btn-gold" style="font-size:.65rem;padding:.35rem .75rem">Copy</button>
         <button onclick="closeStudioOndc()" class="btn-ghost" style="color:#f2e3c8;border-color:rgba(212,175,55,.4);font-size:.65rem;padding:.35rem .75rem">Close</button>
@@ -1540,9 +1540,17 @@ async function startStudioRecording() {
   const errBox = document.getElementById('studioError');
   errBox.style.display = 'none';
 
+  if (!window.isSecureContext || !navigator.mediaDevices || !window.MediaRecorder) {
+    errBox.textContent = "This browser blocks the microphone here. Open the site over HTTPS (or on the same computer as localhost). মাইক্রোফোন ব্যবহারের জন্য HTTPS লাগবে।";
+    errBox.style.display = 'block';
+    return;
+  }
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    studioMediaRecorder = new MediaRecorder(stream);
+    // Safari records MP4/AAC, Chrome/Firefox WebM/Opus: pick what this browser supports
+    const mime = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg;codecs=opus']
+      .find(t => MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(t)) || '';
+    studioMediaRecorder = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
     studioChunks = [];
 
     studioMediaRecorder.ondataavailable = e => {
@@ -1550,7 +1558,7 @@ async function startStudioRecording() {
     };
 
     studioMediaRecorder.onstop = () => {
-      studioAudioBlob = new Blob(studioChunks, { type: 'audio/webm' });
+      studioAudioBlob = new Blob(studioChunks, { type: studioMediaRecorder.mimeType || 'audio/webm' });
       studioAudioUrl = URL.createObjectURL(studioAudioBlob);
       document.getElementById('studioAudioPlayback').src = studioAudioUrl;
       document.getElementById('studioAudioWrap').style.display = 'block';
@@ -1572,7 +1580,9 @@ async function startStudioRecording() {
     }, 1000);
 
   } catch (err) {
-    errBox.textContent = "Microphone permission is needed for the voice studio. মাইক্রোফোনের অনুমতি দিন।";
+    errBox.textContent = err && err.name === 'NotFoundError'
+      ? "No microphone found on this device. মাইক্রোফোন পাওয়া যায়নি।"
+      : "Microphone permission is needed for the voice studio. Allow it in the browser's site settings. মাইক্রোফোনের অনুমতি দিন।";
     errBox.style.display = 'block';
   }
 }
@@ -1666,7 +1676,7 @@ async function publishStudioListing() {
 
     document.getElementById('studioShareCard').style.display = 'block';
     document.getElementById('studioCertLink').href = r.certificate_url || `/c/${studioQrId}`;
-    toast('Listing published to the world!', '🏵');
+    toast('Listing saved to the collection', '🏵');
     document.getElementById('studioShareCard').scrollIntoView({ behavior: 'smooth' });
 
   } catch (err) {
@@ -1674,7 +1684,7 @@ async function publishStudioListing() {
     errBox.style.display = 'block';
   } finally {
     btn.disabled = false;
-    lbl.textContent = 'Publish to the world';
+    lbl.textContent = 'Publish listing';
   }
 }
 
@@ -1975,5 +1985,7 @@ apiFetch('GET', '/listings').then(d => {
 }).catch(() => {});
 </script>
 <script src="/static/theme.js"></script>
+<script src="/static/camera.js"></script>
+<script src="/static/studio.js"></script>
 </body>
 </html>
