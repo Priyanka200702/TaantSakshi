@@ -59,6 +59,7 @@ _LATE_COLUMNS = {
         "closeup_path": "VARCHAR(512)",
         "spacing_json": "TEXT",
         "declared_json": "TEXT",
+        "listing_json": "TEXT",
     },
 }
 

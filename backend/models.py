@@ -132,6 +132,7 @@ class Saree(Base):
     closeup_path = Column(String(512), nullable=True)  # rectified cloth window, shown downscaled
     spacing_json = Column(Text, nullable=True)   # thread-spacing evenness per direction (JSON)
     declared_json = Column(Text, nullable=True)  # optional details typed in by the cooperative (JSON)
+    listing_json = Column(Text, nullable=True)   # voice-studio listing published by the cooperative (JSON)
     proc_status = Column(String(32), default="queued", nullable=False, index=True)  # queued, processing, done, failed
     proc_error_code = Column(String(64), nullable=True)
     proc_error_reason = Column(Text, nullable=True)

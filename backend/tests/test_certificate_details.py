@@ -67,7 +67,7 @@ def test_old_database_gets_new_columns(tmp_path):
         c.execute(text("CREATE TABLE sarees (qr_id VARCHAR(64) PRIMARY KEY, epi FLOAT)"))
         c.execute(text("INSERT INTO sarees (qr_id, epi) VALUES ('TS-OLD', 50.0)"))
     added = add_missing_columns(eng)
-    assert set(added) == {"sarees.weave_json", "sarees.closeup_path", "sarees.spacing_json", "sarees.declared_json"}
+    assert set(added) == {"sarees.weave_json", "sarees.closeup_path", "sarees.spacing_json", "sarees.declared_json", "sarees.listing_json"}
     cols = {c["name"] for c in inspect(eng).get_columns("sarees")}
     assert {"weave_json", "closeup_path", "spacing_json", "declared_json", "epi"} <= cols
     with eng.begin() as c:
