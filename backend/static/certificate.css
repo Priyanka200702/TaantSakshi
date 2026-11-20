@@ -563,3 +563,8 @@ html { scrollbar-color: var(--gold-600) var(--cream-100); }
 .declared-sub .s { display: block; margin: 2px 0 0; }
 .declared-facts { margin-top: 14px; background: #fffdf8; }
 .declared-facts dt { color: var(--muted); }
+
+/* brand logo image */
+.brand-mark { background: none !important; box-shadow: none !important; }
+.brand-mark img, .seal img { width: 100%; height: 100%; display: block; }
+.seal { width: 54px; height: 54px; }

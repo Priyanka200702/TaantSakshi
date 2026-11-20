@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ecd287"/><stop offset="1" stop-color="#b8902a"/></linearGradient><clipPath id="iris"><circle cx="32" cy="32" r="11.4"/></clipPath></defs>
+  <circle cx="32" cy="32" r="31.5" fill="#6d1d2e"/>
+  <circle cx="32" cy="32" r="29.8" fill="none" stroke="url(#g)" stroke-width="2.6"/>
+  <path d="M6.5 32C15 17.5 49 17.5 57.5 32C49 46.5 15 46.5 6.5 32Z" fill="#fdf9f3"/>
+  <circle cx="32" cy="32" r="12.6" fill="#4e1020"/>
+  <g clip-path="url(#iris)">
+    <rect x="22.70" y="21.50" width="4.60" height="21" fill="#e0bf62"/>
+    <rect x="29.70" y="21.50" width="4.60" height="21" fill="#e0bf62"/>
+    <rect x="36.70" y="21.50" width="4.60" height="21" fill="#e0bf62"/>
+    <rect x="21.50" y="22.70" width="21" height="4.60" fill="#9a3048"/>
+    <rect x="21.50" y="29.70" width="21" height="4.60" fill="#9a3048"/>
+    <rect x="21.50" y="36.70" width="21" height="4.60" fill="#9a3048"/>
+    <rect x="22.70" y="22.45" width="4.60" height="5.10" fill="#e0bf62"/>
+    <rect x="36.70" y="22.45" width="4.60" height="5.10" fill="#e0bf62"/>
+    <rect x="29.70" y="29.45" width="4.60" height="5.10" fill="#e0bf62"/>
+    <rect x="22.70" y="36.45" width="4.60" height="5.10" fill="#e0bf62"/>
+    <rect x="36.70" y="36.45" width="4.60" height="5.10" fill="#e0bf62"/>
+  </g>
+</svg>

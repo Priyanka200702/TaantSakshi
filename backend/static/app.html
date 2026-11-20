@@ -3,7 +3,11 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<meta name="theme-color" content="#4A0D18"/>
+<meta name="theme-color" content="#6d1d2e"/>
+<link rel="icon" href="/static/brand/favicon.svg" type="image/svg+xml"/>
+<link rel="icon" href="/static/brand/favicon-32.png" sizes="32x32" type="image/png"/>
+<link rel="apple-touch-icon" href="/static/brand/apple-touch-icon.png"/>
+<link rel="manifest" href="/static/brand/manifest.webmanifest"/>
 <meta name="description" content="TantSaakshi — thread count measured at the loom for Bengal handloom. Register at the loom, verify the weave, sell with your voice."/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -580,17 +584,16 @@ footer {
   .footer-links { flex-direction: column; gap: .75rem; }
 }
 </style>
+<link rel="stylesheet" href="/static/theme.css"/>
 </head>
 <body>
 
 <!-- ══════ NAVBAR ══════ -->
 <nav id="navbar">
   <a class="nav-brand" href="#" onclick="showPage('home');return false">
-    <div class="nav-brand-icon">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="10" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
-    </div>
+    <div class="nav-brand-icon"><img src="/static/brand/logo.svg" alt="" width="44" height="44"/></div>
     <div>
-      <div class="nav-brand-name">TantSaakshi</div>
+      <div class="nav-brand-name">Tant<em>Saakshi</em></div>
       <span class="nav-brand-sub">তাঁতসাক্ষী · সুতোর সাক্ষী</span>
     </div>
   </a>
@@ -621,9 +624,14 @@ footer {
 <!-- ─────── 1. HOME ─────── -->
 <div id="page-home" class="page active">
   <section class="hero">
+    <svg class="corner-ornament" viewBox="0 0 100 100" aria-hidden="true">
+      <path d="M4 100V4h96"/><path d="M12 92V12h88" opacity=".55"/>
+      <path d="M12 52c10 0 16-8 16-17"/><circle cx="28" cy="33" r="2.4"/><circle cx="40" cy="22" r="1.6"/><circle cx="22" cy="44" r="1.2"/>
+    </svg>
     <div class="hero-content">
       <div class="hero-eyebrow">Bengal Handloom <span class="bn">· বাংলার তাঁত</span></div>
-      <h1 class="hero-title">Every thread<br><em>bears witness.</em></h1>
+      <h1 class="hero-title"><span class="ht-line">Every thread</span><span class="ht-line">bears <em>witness.</em></span></h1>
+      <svg class="thread-line" viewBox="0 0 320 14" aria-hidden="true"><path d="M2 7 C 40 1, 70 13, 110 7 S 180 1, 220 7 S 290 13, 318 7"/></svg>
       <p class="hero-bn">প্রতিটি সুতো সাক্ষী দেয়।</p>
       <p class="hero-desc">TantSaakshi is the loom-side trust layer for Bengal handloom — thread density measured by 2D-FFT physics at the cooperative, recorded as a digital birth certificate that anyone can check with one scan.</p>
       <div class="hero-ctas">
@@ -631,40 +639,27 @@ footer {
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z"/></svg>
           VERIFY A SAREE <span style="font-family:'Noto Serif Bengali',serif;font-weight:400;text-transform:none;letter-spacing:0;font-size:.8rem">যাচাই করুন</span>
         </button>
-        <button class="btn-ghost" style="color:#f2e3c8;border-color:rgba(242,227,200,.4)" onclick="showPage('catalogue')">
+        <button class="btn-rose" onclick="showPage('catalogue')">
           THE COLLECTION <span style="font-family:'Noto Serif Bengali',serif;font-weight:400;text-transform:none;letter-spacing:0;font-size:.8rem">সংগ্রহ</span>
         </button>
       </div>
+      <dl class="hero-numbers" aria-live="polite">
+        <div><dt id="statSarees">—</dt><dd>Sarees certified<span class="bn">সনদপ্রাপ্ত শাড়ি</span></dd></div>
+        <div><dt id="statCoops">—</dt><dd>Weaving cooperatives<span class="bn">সমবায় সমিতি</span></dd></div>
+      </dl>
     </div>
     <div class="hero-image-col">
       <div class="hero-img-frame">
-        <img src="https://images.unsplash.com/photo-1569909115134-a0426936c879?crop=entropy&cs=srgb&fm=jpg&q=85&w=800" alt="Weaver at the loom"/>
+        <div class="art art-loom" aria-hidden="true"><span class="cloth"></span><span class="beam"></span></div>
+        <img onerror="this.remove()" src="https://images.unsplash.com/photo-1569909115134-a0426936c879?crop=entropy&cs=srgb&fm=jpg&q=85&w=800" alt="Weaver at the loom"/>
         <div class="hero-epi-badge">
           <span class="num" id="heroEpi">EPI · PPI</span>
           <span class="label">Ends / Inch · FFT-Measured</span>
         </div>
         <div class="hero-verified-badge">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
-          Birth Certificate
+          <span class="seal" aria-hidden="true"><img src="/static/brand/logo.svg" alt="" width="34" height="34"/></span>
+          <span><b>Birth certificate</b><span class="bn">তাঁতের জন্ম সনদ</span></span>
         </div>
-      </div>
-    </div>
-    <div class="hero-stats">
-      <div class="stat-cell">
-        <span class="stat-icon">🛡</span>
-        <div class="stat-text"><b>Measured Quality</b>thread count from the cloth</div>
-      </div>
-      <div class="stat-cell">
-        <span class="stat-icon">📊</span>
-        <div class="stat-text"><b>Smart Analysis</b>&amp; Insights</div>
-      </div>
-      <div class="stat-cell">
-        <span class="stat-icon">🧵</span>
-        <div class="stat-text"><b>Authentic Handloom</b>&amp; Heritage</div>
-      </div>
-      <div class="stat-cell">
-        <span class="stat-icon">📜</span>
-        <div class="stat-text"><b>Digital Certificate</b>Checkable with one scan</div>
       </div>
     </div>
   </section>
@@ -676,24 +671,24 @@ footer {
     <p class="section-bn">কীভাবে তাঁত সত্য বলে</p>
     <div class="steps-grid">
       <div class="step-card" data-n="1">
-        <div class="step-icon">📷</div>
-        <div class="step-title">Optical registration</div>
+        <div class="step-icon">01</div>
+        <div class="step-title">Tag &amp; marker card</div>
         <div class="step-desc">A printed marker card fixes scale and angle — every saree photographed the same honest way.<span class="bn">মার্কার কার্ডে মাপ ও কোণ ঠিক থাকে — প্রতিটি শাড়ি একইভাবে।</span></div>
       </div>
       <div class="step-card" data-n="2">
-        <div class="step-icon">🔬</div>
+        <div class="step-icon">02</div>
         <div class="step-title">2D-FFT analysis</div>
         <div class="step-desc">2D FFT turns the weave into a spectrum; peaks become ends and picks per inch. No guessing, no promises.<span class="bn">FFT বিশ্লেষণে ছবি থেকে সুতো গণনা।</span></div>
       </div>
       <div class="step-card" data-n="3">
-        <div class="step-icon">🏷</div>
+        <div class="step-icon">03</div>
         <div class="step-title">Recorded against the QR</div>
         <div class="step-desc">EPI/PPI and a micro-texture fingerprint of the cloth are stored against the QR tag; grading stays provisional until calibrated.<span class="bn">সুতোর মাপ ও কাপড়ের ফিঙ্গারপ্রিন্ট QR ট্যাগের সঙ্গে সংরক্ষিত।</span></div>
       </div>
       <div class="step-card" data-n="4">
-        <div class="step-icon">🗣</div>
-        <div class="step-title">Weaver's voice</div>
-        <div class="step-desc">One scan on the saraya shows the weave, the cooperative, and the weaver's own voice-told story.<span class="bn">এক স্ক্যানে শাড়ির পরিচয় ও তাঁতির গল্প।</span></div>
+        <div class="step-icon">04</div>
+        <div class="step-title">Scan &amp; share</div>
+        <div class="step-desc">One scan of the tag shows the weave, the cooperative and the weaver's story — on any phone.<span class="bn">এক স্ক্যানে শাড়ির পরিচয় ও তাঁতির গল্প।</span></div>
       </div>
     </div>
   </section>
@@ -706,11 +701,12 @@ footer {
         <h2 class="section-title">Each weave, a district's signature</h2>
         <p class="section-bn">প্রতিটি বুনন এক জেলার স্বাক্ষর</p>
       </div>
-      <button class="btn-ghost" onclick="showPage('catalogue')">View All</button>
+      <button class="btn-outline" onclick="showPage('catalogue')">View all <span class="bn">সব দেখুন</span></button>
     </div>
     <div class="crafts-grid">
       <div class="craft-card" onclick="showPage('catalogue')">
-        <img src="https://images.unsplash.com/photo-1569909115134-a0426936c879?crop=entropy&cs=srgb&fm=jpg&q=80&w=600" alt="Dhaniakhali Tant"/>
+        <div class="art art-dhaniakhali" aria-hidden="true"></div>
+        <img loading="lazy" onerror="this.remove()" src="https://images.unsplash.com/photo-1569909115134-a0426936c879?crop=entropy&cs=srgb&fm=jpg&q=80&w=600" alt="Dhaniakhali Tant"/>
         <div class="craft-overlay">
           <div class="craft-bn">ধনিয়াখালি তাঁত</div>
           <div class="craft-name">Dhaniakhali Tant</div>
@@ -718,7 +714,8 @@ footer {
         </div>
       </div>
       <div class="craft-card" onclick="showPage('catalogue')">
-        <img src="https://images.unsplash.com/photo-1638310533874-6c124c012e1d?crop=entropy&cs=srgb&fm=jpg&q=80&w=600" alt="Santipur Jamdani"/>
+        <div class="art art-shantipur" aria-hidden="true"></div>
+        <img loading="lazy" onerror="this.remove()" src="https://images.unsplash.com/photo-1638310533874-6c124c012e1d?crop=entropy&cs=srgb&fm=jpg&q=80&w=600" alt="Santipur Jamdani"/>
         <div class="craft-overlay">
           <div class="craft-bn">শান্তিপুর জামদানি</div>
           <div class="craft-name">Santipur Jamdani</div>
@@ -726,7 +723,8 @@ footer {
         </div>
       </div>
       <div class="craft-card" onclick="showPage('catalogue')">
-        <img src="https://images.pexels.com/photos/14953193/pexels-photo-14953193.jpeg?auto=compress&cs=tinysrgb&h=600&w=600" alt="Bishnupur Baluchari"/>
+        <div class="art art-baluchari" aria-hidden="true"></div>
+        <img loading="lazy" onerror="this.remove()" src="https://images.pexels.com/photos/14953193/pexels-photo-14953193.jpeg?auto=compress&cs=tinysrgb&h=600&w=600" alt="Bishnupur Baluchari"/>
         <div class="craft-overlay">
           <div class="craft-bn">বিষ্ণুপুর বালুচরী</div>
           <div class="craft-name">Bishnupur Baluchari</div>
@@ -734,7 +732,8 @@ footer {
         </div>
       </div>
       <div class="craft-card" onclick="showPage('catalogue')">
-        <img src="https://images.unsplash.com/photo-1588140686379-1b76a52103dc?crop=entropy&cs=srgb&fm=jpg&q=80&w=600" alt="Bolpur Kantha"/>
+        <div class="art art-kantha" aria-hidden="true"></div>
+        <img loading="lazy" onerror="this.remove()" src="https://images.unsplash.com/photo-1588140686379-1b76a52103dc?crop=entropy&cs=srgb&fm=jpg&q=80&w=600" alt="Bolpur Kantha"/>
         <div class="craft-overlay">
           <div class="craft-bn">বোলপুর কাঁথা</div>
           <div class="craft-name">Bolpur Kantha</div>
@@ -844,8 +843,8 @@ footer {
         <!-- Left: Picker & Voice Recorder -->
         <div style="display:flex;flex-direction:column;gap:1.5rem">
           <section class="paper-grain" style="background:white;border:1px solid var(--border-gold);border-radius:var(--radius);padding:1.5rem">
-            <h3 style="font-family:'Playfair Display',serif;font-size:1.15rem;font-weight:700;color:var(--maroon)">1 · Choose a verified weave</h3>
-            <p style="font-family:'Noto Serif Bengali',serif;font-size:.78rem;color:var(--gold-mid)">যাচাইকৃত শাড়ি বাছুন</p>
+            <h3 style="font-family:'Playfair Display',serif;font-size:1.15rem;font-weight:700;color:var(--maroon)">1 · Choose a certified saree</h3>
+            <p style="font-family:'Noto Serif Bengali',serif;font-size:.78rem;color:var(--gold-mid)">সনদপ্রাপ্ত শাড়ি বাছুন</p>
             
             <div id="studioSareeLoader" class="loader" style="padding:1rem;display:none">
               <div class="spinner" style="width:36px;height:36px"></div>
@@ -854,12 +853,12 @@ footer {
             <div id="studioUnlistedList" style="margin-top:1rem;display:flex;flex-direction:column;gap:.65rem"></div>
 
             <p id="studioNoneUnlisted" style="display:none;font-size:.8rem;color:var(--text-muted);margin-top:.75rem">
-              Every verified weave already has its story. Register a new saree at the loom desk first.
+              Every certified saree already has its story. Register a new saree at the loom desk first.
               <span style="font-family:'Noto Serif Bengali',serif;display:block;margin-top:.2rem">সব শাড়ির গল্প প্রকাশিত — আগে নতুন শাড়ি নিবন্ধন করুন।</span>
             </p>
 
             <div style="margin-top:1rem;border-top:1px dashed var(--border-gold);padding-top:.85rem">
-              <label class="form-label" style="font-size:.65rem">Or enter a verified QR ID manually</label>
+              <label class="form-label" style="font-size:.65rem">Or enter a certified tag ID manually</label>
               <input id="studioQrManual" placeholder="TS-XXXXXX" oninput="this.value=this.value.toUpperCase();onStudioManualQr(this.value)" style="font-family:monospace;letter-spacing:.2em;text-transform:uppercase"/>
             </div>
           </section>
@@ -1010,15 +1009,15 @@ footer {
     <div class="page-header">
       <div class="eyebrow" style="color:var(--gold-mid)">Certified collection</div>
       <h1>Masterworks with a witness</h1>
-      <p style="font-family:'Noto Serif Bengali',serif;color:var(--text-muted);margin-top:.5rem">যাচাইকৃত সংগ্রহ — প্রতিটি শাড়ির জন্ম সনদ আছে</p>
+      <p style="font-family:'Noto Serif Bengali',serif;color:var(--text-muted);margin-top:.5rem">সনদপ্রাপ্ত সংগ্রহ — প্রতিটি শাড়ির জন্ম সনদ আছে</p>
       <div class="paisley-divider"></div>
     </div>
     <div id="filterBar" class="filter-bar"></div>
     <div id="catalogueLoader" class="loader" style="display:none"><div class="spinner"></div><div class="spinner-label">Unfolding the collection…</div></div>
     <div id="catalogueGrid" class="catalogue-grid"></div>
     <div id="catalogueEmpty" style="display:none" class="cert-empty">
-      No verified sarees in this craft yet — the looms are still at work.
-      <span class="bn">এই কারুকাজে এখনও কোনো যাচাইকৃত শাড়ি নেই।</span>
+      No certified sarees in this craft yet — the looms are still at work.
+      <span class="bn">এই কারুকাজে এখনও কোনো সনদপ্রাপ্ত শাড়ি নেই।</span>
     </div>
   </div>
 </div>
@@ -1034,6 +1033,7 @@ footer {
   <div class="login-wrapper">
     <div class="login-card paper-grain">
       <div style="text-align:center;margin-bottom:2rem">
+        <img class="login-logo" src="/static/brand/logo.svg" alt="TantSaakshi" width="72" height="72"/>
         <div class="eyebrow" style="color:var(--gold-mid)">Loom-side access</div>
         <h2 style="font-family:'Playfair Display',serif;font-size:1.8rem;color:var(--maroon);margin:.5rem 0">Weaver &amp; Co-op Login</h2>
         <p style="font-family:'Noto Serif Bengali',serif;font-size:.85rem;color:var(--text-muted)">সমবায় কর্মী ও বিক্রেতার প্রবেশ</p>
@@ -1140,10 +1140,20 @@ footer {
 </div>
 
 <!-- ══════ FOOTER ══════ -->
+<!-- Phone tab bar -->
+<nav class="tabbar" id="tabbar" aria-label="Main">
+  <span class="tab-ink" aria-hidden="true"></span>
+  <button data-tab="home" onclick="showPage('home')"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1z"/></svg><span>Home</span></button>
+  <button data-tab="verify" onclick="showPage('verify')"><svg viewBox="0 0 24 24"><path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h3v3h-3zM18 18h3v3h-3z"/></svg><span>Verify</span></button>
+  <button data-tab="catalogue" onclick="showPage('catalogue')"><svg viewBox="0 0 24 24"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"/></svg><span>Collection</span></button>
+  <button data-tab="studio" onclick="showPage('studio')"><svg viewBox="0 0 24 24"><path d="M12 3a3 3 0 013 3v6a3 3 0 01-6 0V6a3 3 0 013-3z"/><path d="M5 11a7 7 0 0014 0M12 18v3"/></svg><span>Studio</span></button>
+  <button data-tab="account" onclick="tabAccount()"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg><span id="tabAccountLabel">Login</span></button>
+</nav>
+
 <footer>
   <div class="footer-top">
     <div>
-      <div class="footer-brand">TantSaakshi</div>
+      <div class="footer-brand"><img class="footer-logo" src="/static/brand/logo.svg" alt="" width="40" height="40"/>TantSaakshi</div>
       <div class="footer-brand-bn">তাঁতসাক্ষী</div>
       <div class="footer-tagline">Every thread bears witness · প্রতিটি সুতো সাক্ষী দেয়</div>
     </div>
@@ -1964,5 +1974,6 @@ apiFetch('GET', '/listings').then(d => {
   }
 }).catch(() => {});
 </script>
+<script src="/static/theme.js"></script>
 </body>
 </html>
