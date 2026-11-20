@@ -99,6 +99,10 @@ def run_registration_analysis(
             "sift_path": sift_path,
         },
         "fingerprint_path": residual_path,
+        "weave": result.get("weave"),
+        "visible_rows_per_inch": result.get("visible_rows_per_inch"),
+        "closeup_path": result.get("closeup_path"),
+        "spacing": result.get("spacing"),
         "raw": result,
     }
 

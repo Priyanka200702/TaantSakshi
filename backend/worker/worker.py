@@ -81,6 +81,13 @@ def process_one_job(db: Session) -> bool:
         saree.irregularity = json.dumps(analysis.get("irregularity", {}))
         saree.defects = json.dumps(analysis.get("defects", {}))
         saree.fingerprint_path = analysis.get("fingerprint_path")
+        weave = analysis.get("weave")
+        if weave is not None:
+            weave = {**weave, "visible_rows_per_inch": analysis.get("visible_rows_per_inch")}
+        saree.weave_json = json.dumps(weave) if weave is not None else None
+        saree.closeup_path = analysis.get("closeup_path")
+        spacing = analysis.get("spacing")
+        saree.spacing_json = json.dumps(spacing) if spacing is not None else None
         saree.proc_error_code = None
         saree.proc_error_reason = None
         db.commit()

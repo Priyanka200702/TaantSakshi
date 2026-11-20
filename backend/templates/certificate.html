@@ -1,565 +1,243 @@
+{#- TantSaakshi public certificate. States: 1 unknown tag, 2 blank tag, 3 processing, 4 full certificate, 5 retake needed. -#}
+{%- macro t(en, bn) -%}
+{%- if lang == 'bn' -%}<span class="p bn">{{ bn }}</span> <span class="s">{{ en }}</span>
+{%- else -%}<span class="p">{{ en }}</span> <span class="s bn">{{ bn }}</span>{%- endif -%}
+{%- endmacro -%}
 <!DOCTYPE html>
-<html lang="{{ lang }}">
-
+<html lang="{{ 'bn' if lang == 'bn' else 'en' }}">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TantSaakshi | ডিজিটাল তাঁত প্রমাণপত্র — Digital Authenticity Certificate</title>
-    <style>
-        :root {
-            --primary: #8b263e;
-            --primary-dark: #651a2c;
-            --gold: #d4af37;
-            --gold-light: #fdf6e2;
-            --text-dark: #222222;
-            --text-muted: #666666;
-            --bg-page: #fbf9f5;
-            --card-bg: #ffffff;
-            --border-color: #e5dec9;
-            --success: #2e7d32;
-            --warning: #c67d00;
-            --danger: #c62828;
-            --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Hind Siliguri", "Kalpurush", sans-serif;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            font-family: var(--font-family);
-            background-color: var(--bg-page);
-            color: var(--text-dark);
-            line-height: 1.5;
-            padding: 16px 12px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-        }
-
-        .lang-switch {
-            width: 100%;
-            max-width: 480px;
-            display: flex;
-            justify-content: flex-end;
-            margin-bottom: 12px;
-            gap: 8px;
-        }
-
-        .lang-btn {
-            background: #fff;
-            border: 1px solid var(--border-color);
-            padding: 4px 10px;
-            border-radius: 14px;
-            font-size: 13px;
-            text-decoration: none;
-            color: var(--text-dark);
-            font-weight: 500;
-        }
-
-        .lang-btn.active {
-            background: var(--primary);
-            color: #fff;
-            border-color: var(--primary);
-        }
-
-        .certificate-card {
-            width: 100%;
-            max-width: 480px;
-            background: var(--card-bg);
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-            border: 1px solid var(--border-color);
-            overflow: hidden;
-            margin-bottom: 24px;
-        }
-
-        .card-header {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            color: #ffffff;
-            padding: 24px 20px 20px;
-            text-align: center;
-            position: relative;
-        }
-
-        .card-header::after {
-            content: "";
-            display: block;
-            height: 4px;
-            background: var(--gold);
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-        }
-
-        .brand-title {
-            font-size: 22px;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-            margin-bottom: 2px;
-        }
-
-        .brand-sub {
-            font-size: 13px;
-            color: var(--gold);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            font-weight: 600;
-        }
-
-        .card-body {
-            padding: 24px 20px;
-        }
-
-        /* Repeated Scan Warning Banner */
-        .warning-banner {
-            background-color: #fff8e1;
-            border: 1.5px solid var(--warning);
-            border-radius: 8px;
-            padding: 12px 14px;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
-            color: #8c5b00;
-            font-size: 13.5px;
-            line-height: 1.4;
-        }
-
-        .warning-icon {
-            font-size: 20px;
-            line-height: 1;
-        }
-
-        /* State 1: Unknown Tag */
-        .state-box {
-            text-align: center;
-            padding: 30px 10px;
-        }
-
-        .state-icon {
-            font-size: 48px;
-            margin-bottom: 12px;
-        }
-
-        .state-title {
-            font-size: 20px;
-            font-weight: 700;
-            margin-bottom: 8px;
-        }
-
-        .state-desc {
-            font-size: 14px;
-            color: var(--text-muted);
-            margin-bottom: 16px;
-        }
-
-        /* State 4: Genuine Certificate */
-        .badge-verified {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: #e8f5e9;
-            color: var(--success);
-            border: 1px solid #c8e6c9;
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-weight: 600;
-            font-size: 14px;
-            margin-bottom: 18px;
-        }
-
-        .badge-verified::before {
-            content: "✓";
-            font-weight: bold;
-        }
-
-        .info-grid {
-            display: grid;
-            gap: 14px;
-        }
-
-        .info-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: baseline;
-            border-bottom: 1px dashed #eee;
-            padding-bottom: 8px;
-        }
-
-        .info-label {
-            font-size: 13.5px;
-            color: var(--text-muted);
-            font-weight: 500;
-        }
-
-        .info-val {
-            font-size: 14.5px;
-            font-weight: 600;
-            text-align: right;
-            color: var(--text-dark);
-        }
-
-        .tag-pill {
-            display: inline-block;
-            background: #f0f0f0;
-            font-family: monospace;
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 13px;
-            letter-spacing: 0.5px;
-        }
-
-        .grade-banner {
-            background: var(--gold-light);
-            border: 1px solid #eed99e;
-            border-radius: 8px;
-            padding: 12px 14px;
-            margin: 16px 0;
-            text-align: center;
-        }
-
-        .grade-title {
-            font-size: 18px;
-            font-weight: 700;
-            color: var(--primary);
-        }
-
-        .grade-desc {
-            font-size: 13px;
-            color: #5d4a1b;
-            margin-top: 2px;
-        }
-
-        .thread-counts {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-top: 14px;
-        }
-
-        .count-card {
-            background: #f7f6f2;
-            padding: 10px;
-            border-radius: 8px;
-            text-align: center;
-        }
-
-        .count-num {
-            font-size: 20px;
-            font-weight: 700;
-            color: var(--primary-dark);
-        }
-
-        .count-label {
-            font-size: 11px;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            font-weight: 600;
-        }
-
-        .card-footer {
-            background: #fbf9f5;
-            border-top: 1px solid #eee;
-            padding: 14px 20px;
-            text-align: center;
-            font-size: 12px;
-            color: var(--text-muted);
-        }
-
-        .status-pill {
-            display: inline-block;
-            padding: 3px 10px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-
-        .status-queued,
-        .status-processing {
-            background: #fff3e0;
-            color: #e65100;
-        }
-
-        .status-sold {
-            background: #eceff1;
-            color: #455a64;
-        }
-    </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TantSaakshi | ডিজিটাল তাঁত প্রমাণপত্র — Handloom Birth Certificate · {{ qr_id }}</title>
+<meta name="theme-color" content="#6D1D2E">
+{% if state == 3 %}<meta http-equiv="refresh" content="15">{% endif %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600&family=Manrope:wght@400;500;600;700;800&family=Noto+Serif+Bengali:wght@500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,700;1,800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/certificate.css">
 </head>
+<body class="cert-page lang-{{ lang }}">
 
-<body>
+<header class="site-header">
+  <div class="wrap header-row">
+    <a class="brand" href="/" aria-label="TantSaakshi home">
+      <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="18.5"/><circle cx="20" cy="14" r="3.2"/><path d="M13.5 29c0-5 2.9-8.6 6.5-8.6s6.5 3.6 6.5 8.6"/><path d="M11 29.5h18"/></svg></span>
+      <span class="brand-text"><span class="brand-name">Tant<em>Saakshi</em></span><span class="brand-sub bn">তাঁতসাক্ষী · সুতোর সাক্ষী</span></span>
+    </a>
+    <nav class="cert-nav" aria-label="Language">
+      <a href="?lang=en" class="lang-btn {% if lang == 'en' %}active{% endif %}" {% if lang == 'en' %}aria-current="true"{% endif %}>English</a>
+      <a href="?lang=bn" class="lang-btn bn {% if lang == 'bn' %}active{% endif %}" {% if lang == 'bn' %}aria-current="true"{% endif %}>বাংলা</a>
+    </nav>
+  </div>
+  <div class="motif-strip" aria-hidden="true"></div>
+</header>
 
-    <!-- Language Selector -->
-    <div class="lang-switch">
-        <a href="?lang=en" class="lang-btn {% if lang == 'en' %}active{% endif %}">English</a>
-        <a href="?lang=bn" class="lang-btn {% if lang == 'bn' %}active{% endif %}">বাংলা</a>
+<main class="cert-main">
+  <div class="hero-edge" aria-hidden="true"></div>
+  <div class="wrap cert-wrap">
+
+    {% if warning_repeated_scan %}
+    <div class="notice" role="alert">
+      <span class="notice-ico" aria-hidden="true">!</span>
+      <div>
+        <strong>{{ t("Notice: Possible Duplicate Scan", "সতর্কতা: সম্ভাব্য নকল ট্যাগ") }}</strong>
+        <p>{{ t("This tag has been scanned multiple times on different devices recently. A copied tag can be stuck on another saree — ask the seller to verify the cloth itself.",
+                "সম্প্রতি এই ট্যাগটি বিভিন্ন ফোনে বহুবার স্ক্যান হয়েছে। বিক্রেতাকে কাপড়টি যাচাই করতে বলুন।") }}</p>
+      </div>
     </div>
+    {% endif %}
 
-    <div class="certificate-card">
-        <div class="card-header">
-            <h1 class="brand-title">TantSaakshi • তাঁতসাক্ষী</h1>
-            <div class="brand-sub">
-                {% if lang == 'bn' %}
-                প্রকৃত হ্যান্ডলুম তাঁতবস্ত্রের ডিজিটাল প্রমাণপত্র
-                {% else %}
-                Genuine Handloom Digital Authenticity
-                {% endif %}
-            </div>
+    <article class="cert {% if state != 4 %}cert-small{% endif %}">
+      <div class="paar" aria-hidden="true"></div>
+
+      {% if state == 1 %}
+      <div class="state">
+        <span class="state-ico state-bad" aria-hidden="true">✕</span>
+        <h1 class="state-title">{{ t("Not a valid TantSaakshi tag", "এটি একটি বৈধ তাঁতসাক্ষী ট্যাগ নয়") }}</h1>
+        <p class="state-text">{{ t("The ID " ~ qr_id ~ " is not in our records. Check the ID printed under the QR. If it still doesn't open, the tag may not be genuine.",
+                                   "এই আইডি আমাদের তালিকায় নেই। QR-এর নিচের আইডি মিলিয়ে দেখুন। তবুও না খুললে ট্যাগটি আসল নাও হতে পারে।") }}</p>
+      </div>
+
+      {% elif state == 2 %}
+      <div class="state">
+        <span class="state-ico state-wait" aria-hidden="true">◷</span>
+        <h1 class="state-title">{{ t("This tag has not been registered yet", "এই ট্যাগটি এখনও নিবন্ধিত হয়নি") }}</h1>
+        <p class="state-text">{{ t("It was printed" ~ (" for " ~ coop.name if coop else "") ~ ", but no saree has been registered with it. If a seller says this saree is certified, ask them why.",
+                                   "ট্যাগটি ছাপা হয়েছে, কিন্তু কোনো শাড়ি এখনও নিবন্ধিত হয়নি।") }}</p>
+        <p class="tag-chip"><span>Tag</span> {{ qr_id }}</p>
+      </div>
+
+      {% elif state == 3 %}
+      <div class="state">
+        <span class="state-ico state-wait spin" aria-hidden="true">◌</span>
+        <h1 class="state-title">{{ t("Certificate being prepared", "সনদ তৈরি হচ্ছে") }}</h1>
+        <p class="state-text">{{ t("The cloth photos are being measured right now. This page refreshes by itself.",
+                                   "কাপড়ের ছবি এখন মাপা হচ্ছে। পাতাটি নিজে থেকেই নতুন করে খুলবে।") }}</p>
+        <p class="tag-chip"><span>Tag</span> {{ qr_id }}</p>
+      </div>
+
+      {% elif state == 5 %}
+      <div class="state">
+        <span class="state-ico state-wait" aria-hidden="true">↻</span>
+        <h1 class="state-title">{{ t("Registration pending retake", "ছবি পুনর্গ্রহণ প্রয়োজন") }}</h1>
+        <p class="state-text">{{ t("The cooperative needs to photograph the cloth again before this certificate is issued.",
+                                   "সনদ দেওয়ার আগে সমবায়কে কাপড়ের ছবি আবার তুলতে হবে।") }}</p>
+        <p class="tag-chip"><span>Tag</span> {{ qr_id }}</p>
+      </div>
+
+      {% elif state == 4 %}
+      <header class="cert-head">
+        <p class="eyebrow eyebrow-dark">{{ t("Handloom birth certificate", "তাঁতের জন্ম সনদ") }}</p>
+        <h1 class="cert-title">{{ t("Registered Handloom Saree", "নিবন্ধিত তাঁতের শাড়ি") }}</h1>
+        <p class="cert-sub">{{ t("Registered at " ~ (coop.name if coop else "the cooperative") ~ ", with its cloth measured from photographs at the time of registration.",
+                                 (coop.name if coop else "সমবায়") ~ "-এ নিবন্ধিত; নিবন্ধনের সময় কাপড়ের ছবি থেকে মাপা হয়েছে।") }}</p>
+        <div class="head-row">
+          <p class="tag-chip"><span>Tag</span> {{ qr_id }}</p>
+          {% if tag and tag.status == 'sold' %}
+            <span class="pill pill-sold">{{ t("Sold", "বিক্রিত") }}</span>
+          {% else %}
+            <span class="pill pill-ok">✓ {{ t("Registered", "নিবন্ধিত") }}</span>
+          {% endif %}
         </div>
+      </header>
 
-        <div class="card-body">
+      <section class="measure">
+        <figure class="closeup">
+          {% if has_closeup %}
+            <img src="/c/{{ qr_id }}/closeup" alt="Close-up of the measured cloth" width="480" height="480">
+            <figcaption>{{ t("The measured cloth · 19 × 19 mm inside the card", "মাপা কাপড়ের অংশ · ১৯ × ১৯ মিমি") }}</figcaption>
+          {% else %}
+            <img src="/c/{{ qr_id }}/photo" alt="Fabric photo taken at registration">
+            <figcaption>{{ t("Fabric photo taken at registration", "নিবন্ধনের সময় তোলা কাপড়ের ছবি") }}</figcaption>
+          {% endif %}
+        </figure>
 
-            <!-- Repeated Scan / Counterfeit Warning -->
-            {% if warning_repeated_scan %}
-            <div class="warning-banner">
-                <span class="warning-icon">⚠</span>
-                <div>
-                    <strong>
-                        {% if lang == 'bn' %}
-                        সতর্কবার্তা: অনুলিপির সম্ভাবনা
-                        {% else %}
-                        Notice: Possible Duplicate Scan
-                        {% endif %}
-                    </strong><br>
-                    {% if lang == 'bn' %}
-                    এই কোডটি একাধিকবার স্ক্যান করা হয়েছে; এটি নকল বা ফটোকপি হতে পারে। দয়া করে বিক্রেতার সাথে যাচাই
-                    করুন।
-                    {% else %}
-                    This tag has been scanned multiple times; it may be copied or re-printed.
-                    {% endif %}
-                </div>
-            </div>
-            {% endif %}
-
-            <!-- STATE 1: UNKNOWN TAG -->
-            {% if state == 1 %}
-            <div class="state-box">
-                <div class="state-icon" style="color: var(--danger);">✕</div>
-                <h2 class="state-title" style="color: var(--danger);">
-                    {% if lang == 'bn' %}
-                    এটি একটি বৈধ তাঁতসাক্ষী ট্যাগ নয়
-                    {% else %}
-                    Not a valid TantSaakshi tag
-                    {% endif %}
-                </h2>
-                <p class="state-desc">
-                    {% if lang == 'bn' %}
-                    স্ক্যান করা QR কোডটি আমাদের কেন্দ্রীয় ডাটাবেসে নিবন্ধিত নেই। এটি অননুমোদিত বা জাল হতে পারে।
-                    {% else %}
-                    The scanned QR ID ({{ qr_id }}) is not registered in our authentic database.
-                    {% endif %}
-                </p>
-            </div>
-
-            <!-- STATE 2: BLANK TAG -->
-            {% elif state == 2 %}
-            <div class="state-box">
-                <div class="state-icon" style="color: var(--warning);">⏳</div>
-                <h2 class="state-title" style="color: var(--warning);">
-                    {% if lang == 'bn' %}
-                    এই ট্যাগটি নিবন্ধিত হয়নি
-                    {% else %}
-                    This tag has not been registered
-                    {% endif %}
-                </h2>
-                <p class="state-desc">
-                    {% if lang == 'bn' %}
-                    ট্যাগটি প্রকৃত সমবায় সমিতির অধীনে মুদ্রিত হয়েছে কিন্তু এখনও কোনো নির্দিষ্ট শাড়ির সাথে যুক্ত করা
-                    হয়নি।
-                    {% else %}
-                    This is a genuine blank tag issued to {{ coop.name if coop else 'a cooperative' }}, but no saree has
-                    been registered against it yet.
-                    {% endif %}
-                </p>
-                <div style="margin-top: 10px;">
-                    <span class="tag-pill">{{ qr_id }}</span>
-                </div>
-            </div>
-
-            <!-- STATE 3: PROCESSING / QUEUED -->
-            {% elif state == 3 %}
-            <div class="state-box">
-                <div class="state-icon" style="color: var(--primary);">⚙</div>
-                <h2 class="state-title" style="color: var(--primary);">
-                    {% if lang == 'bn' %}
-                    ডিজিটাল প্রমাণপত্র তৈরি হচ্ছে
-                    {% else %}
-                    Certificate being prepared
-                    {% endif %}
-                </h2>
-                <p class="state-desc">
-                    {% if lang == 'bn' %}
-                    শাড়িটির ছবি গৃহীত হয়েছে। কম্পিউটার ভিশন ইঞ্জিনের মাধ্যমে সুতার ঘনত্ব ও বুনন গুণমান বিশ্লেষণ
-                    প্রক্রিয়াধীন রয়েছে। অনুগ্রহ করে কিছুক্ষণ পর আবার দেখুন।
-                    {% else %}
-                    The saree registration photograph is currently being analyzed by the computer vision engine. Please
-                    refresh in a moment.
-                    {% endif %}
-                </p>
-                <div style="margin-top: 10px;">
-                    <span class="status-pill status-processing">
-                        {% if lang == 'bn' %}বিশ্লেষণ চলছে{% else %}Processing{% endif %}
-                    </span>
-                </div>
-            </div>
-
-            <!-- STATE 4: FULL AUTHENTIC CERTIFICATE -->
-            {% elif state == 4 %}
-            <div style="text-align: center;">
-                <div class="badge-verified">
-                    {% if lang == 'bn' %}প্রমাণিত আসল তাঁতবস্ত্র{% else %}Verified Genuine Handloom{% endif %}
-                </div>
-            </div>
-
-            <div class="info-grid">
-                <div class="info-row">
-                    <span class="info-label">{% if lang == 'bn' %}ডিজিটাল ট্যাগ আইডি{% else %}Digital Tag ID{% endif
-                        %}</span>
-                    <span class="info-val tag-pill">{{ qr_id }}</span>
-                </div>
-
-                <div class="info-row">
-                    <span class="info-label">{% if lang == 'bn' %}তাঁত সমিতি / কো-অপারেটিভ{% else %}Weavers'
-                        Cooperative{% endif %}</span>
-                    <span class="info-val">{{ coop.name if coop else 'Cooperative Society' }}</span>
-                </div>
-
-                <div class="info-row">
-                    <span class="info-label">{% if lang == 'bn' %}জেলা / অঞ্চল{% else %}District / Region{% endif
-                        %}</span>
-                    <span class="info-val">{{ coop.district if coop else 'West Bengal' }}</span>
-                </div>
-
-                <div class="info-row">
-                    <span class="info-label">{% if lang == 'bn' %}শাড়ির ধরন{% else %}Saree Variety{% endif %}</span>
-                    <span class="info-val">{{ batch.saree_type if batch else 'Handloom Saree' }}</span>
-                </div>
-
-                <div class="info-row">
-                    <span class="info-label">{% if lang == 'bn' %}তাঁতশিল্পী / কারিগর{% else %}Master Weaver{% endif
-                        %}</span>
-                    <span class="info-val">
-                        {% if weaver and weaver.show_name_publicly %}
-                        {{ weaver.name }}
-                        {% else %}
-                        {% if lang == 'bn' %}সমবায় সমিতিভুক্ত প্রবীণ কারিগর{% else %}Registered Cooperative Weaver{%
-                        endif %}
-                        {% endif %}
-                    </span>
-                </div>
-
-                <div class="info-row">
-                    <span class="info-label">{% if lang == 'bn' %}নিবন্ধনের তারিখ{% else %}Registration Date{% endif
-                        %}</span>
-                    <span class="info-val">{{ reg_date }}</span>
-                </div>
-
-                {% if tag and tag.status == 'sold' %}
-                <div class="info-row">
-                    <span class="info-label">{% if lang == 'bn' %}বর্তমান অবস্থা{% else %}Status{% endif %}</span>
-                    <span class="info-val"><span class="status-pill status-sold">{% if lang == 'bn' %}বিক্রিত{% else
-                            %}Sold{% endif %}</span></span>
-                </div>
-                {% endif %}
-            </div>
-
-            <!-- Downscaled Registered Fabric Photo (Display Copy) -->
-            <div class="fabric-preview-container" style="text-align: center; margin: 16px 20px 16px;">
-                <img src="/c/{{ qr_id }}/photo" alt="Registered Fabric"
-                    style="max-width: 100%; height: auto; max-height: 240px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border-color); box-shadow: 0 2px 8px rgba(0,0,0,0.06);" />
-                <div style="font-size: 12px; color: var(--text-muted); margin-top: 6px;">
-                    {% if lang == 'bn' %}নিবন্ধিত তাঁত কাপড়ের নমুনা ছবি{% else %}Registered fabric photo (Display
-                    copy){% endif %}
-                </div>
-            </div>
-
-            <!-- Quality Grade Banner -->
-            <div class="grade-banner">
-                {% if saree.grade %}
-                <div class="grade-title">
-                    Grade {{ saree.grade }}
-                </div>
-                <div class="grade-desc">
-                    {% if lang == 'bn' %}
-                    {% if saree.grade == 'A' %}
-                    নিখুঁত ও সুষম বুনন — প্রথম শ্রেণি (খসড়া মূল্যায়ন)
-                    {% elif saree.grade == 'B' %}
-                    স্বাভাবিক হস্তনির্মিত নান্দনিক বৈশিষ্ট্যযুক্ত সুষম বুনন (খসড়া মূল্যায়ন)
-                    {% else %}
-                    প্রথাগত ঐতিহ্যবাহী হস্তনির্মিত তাঁতবস্ত্র (খসড়া মূল্যায়ন)
-                    {% endif %}
-                    {% else %}
-                    {% if saree.grade == 'A' %}
-                    Fine, even weave (Provisional grading)
-                    {% elif saree.grade == 'B' %}
-                    Authentic handloom texture with natural character (Provisional)
-                    {% else %}
-                    Traditional artisanal weave (Provisional)
-                    {% endif %}
-                    {% endif %}
-                </div>
-                {% else %}
-                <div class="grade-title" style="font-size: 20px;">
-                    {{ saree.epi | round(1) if saree.epi else '—' }} × {{ saree.ppi | round(1) if saree.ppi else '—' }}
-                    TPI
-                </div>
-                <div class="grade-desc">
-                    <div style="font-weight: 600;">গুণমান গ্রেড: খসড়া / এখনও নির্ধারিত হয়নি</div>
-                    <div style="font-size: 13px; color: var(--text-muted); margin-top: 2px;">Quality grade: provisional / not yet assigned</div>
-                </div>
-                {% endif %}
-            </div>
-
-            <!-- Thread Density Metric Cards -->
-            <div class="thread-counts">
-                <div class="count-card">
-                    <div class="count-num">{{ saree.epi | round(1) if saree.epi else '—' }}</div>
-                    <div class="count-label">{% if lang == 'bn' %}টানা সুতা (EPI){% else %}Ends / Inch (Warp){% endif %}
-                    </div>
-                </div>
-                <div class="count-card">
-                    <div class="count-num">{{ saree.ppi | round(1) if saree.ppi else '—' }}</div>
-                    <div class="count-label">{% if lang == 'bn' %}বানে সুতা (PPI){% else %}Picks / Inch (Weft){% endif
-                        %}</div>
-                </div>
-            </div>
-
-            <!-- STATE 5: FAILED QUALITY CHECKS (Tag Released) -->
-            {% elif state == 5 %}
-            <div class="state-box">
-                <div class="state-icon" style="color: var(--danger);">⚠</div>
-                <h2 class="state-title" style="color: var(--danger);">
-                    {% if lang == 'bn' %}ছবি পুনর্গ্রহণ প্রয়োজন{% else %}Registration Pending Retake{% endif %}
-                </h2>
-                <p class="state-desc">
-                    {% if lang == 'bn' %}
-                    শাড়ির তোলা ছবিটি আলোকচিত্র গুণমান যাচাইয়ে উত্তীর্ণ হয়নি ({{ saree.proc_error_reason or 'অস্পষ্ট
-                    ছবি' }})। ট্যাগটি অবমুক্ত করা হয়েছে যাতে পুনরায় ছবি তুলে নির্ভুলভাবে নিবন্ধন করা যায়।
-                    {% else %}
-                    The initial registration photograph did not pass quality validation ({{ saree.proc_error_reason or
-                    'Photo quality check' }}). The tag has been released for retake.
-                    {% endif %}
-                </p>
-            </div>
-            {% endif %}
-
-        </div>
-
-        <div class="card-footer">
-            {% if lang == 'bn' %}
-            তাঁতশিল্পীদের মর্যাদা ও ভোক্তার আস্থা রক্ষায় তাঁতসাক্ষী প্রযুক্তি • পশ্চিমবঙ্গ
+        <div class="counts">
+          <p class="label">{{ t("Measured from the cloth", "কাপড় থেকে মাপা") }}</p>
+          <div class="tpi">
+            <div><span class="tpi-num">{{ "%.1f"|format(saree.epi) if saree.epi is not none else "—" }}</span>
+                 <span class="tpi-lbl">{{ t("Ends / inch · warp", "টানা সুতো (EPI)") }}</span></div>
+            <span class="tpi-x" aria-hidden="true">×</span>
+            <div><span class="tpi-num">{{ "%.1f"|format(saree.ppi) if saree.ppi is not none else "—" }}</span>
+                 <span class="tpi-lbl">{{ t("Picks / inch · weft", "বানা সুতো (PPI)") }}</span></div>
+          </div>
+          {% if total_tpi %}
+          <p class="total">{{ t("≈ " ~ total_tpi ~ " threads per inch in total", "মোট প্রায় " ~ total_tpi ~ " সুতো প্রতি ইঞ্চি") }}</p>
+          {% endif %}
+          {% if weave %}
+          <p class="weave"><span class="k">{{ t("Weave", "বুনন") }}</span>
+            <span class="v">{% if lang == 'bn' %}{{ weave.label_bn }}{% else %}{{ weave.label_en }}{% endif %}</span></p>
+          {% if weave.ambiguous %}
+          <p class="note">{{ t("Picks could be " ~ weave.candidates[0] ~ " or " ~ weave.candidates[1] ~ " per inch — two picks can lie together in this weave.",
+                               "বানা " ~ weave.candidates[0] ~ " বা " ~ weave.candidates[1] ~ " প্রতি ইঞ্চি হতে পারে।") }}</p>
+          {% endif %}
+          {% endif %}
+          {% for e in evenness %}
+          <p class="weave even"><span class="k">{{ t(e.axis_en ~ " spacing", e.axis_bn ~ "র ফাঁক") }}</span>
+            <span class="v">{% if lang == 'bn' %}{{ e.band_bn }}{% else %}{{ e.band_en }}{% endif %}{% if e.pct %} <small>· ±{{ e.pct }}%</small>{% endif %}</span></p>
+          {% endfor %}
+          {% if evenness %}
+          <p class="note">{{ t("Hand-beaten weft usually varies more than machine weaving — a hint about the making, not proof.",
+                               "হাতে বোনা কাপড়ে ফাঁক সাধারণত বেশি অসমান হয় — এটি ইঙ্গিত, প্রমাণ নয়।") }}</p>
+          {% endif %}
+          <p class="grade">
+            {% if saree.grade %}
+              {{ t("Quality grade: " ~ saree.grade ~ " (provisional)", "গুণমান গ্রেড: " ~ saree.grade ~ " (অস্থায়ী)") }}
             {% else %}
-            Protecting handloom heritage & buyer trust with TantSaakshi • West Bengal
+              {{ t("Quality grade: provisional / not yet assigned", "গুণমান গ্রেড: অস্থায়ী / এখনও নির্ধারিত হয়নি") }}
             {% endif %}
+          </p>
         </div>
+      </section>
+
+      <dl class="facts">
+        <div><dt>{{ t("Cooperative", "তাঁত সমিতি") }}</dt><dd>{{ coop.name if coop else "—" }}</dd></div>
+        <div><dt>{{ t("District", "জেলা") }}</dt><dd>{{ coop.district if coop else "—" }}</dd></div>
+        <div><dt>{{ t("Saree type", "শাড়ির ধরন") }}</dt><dd>{{ batch.saree_type if batch else "—" }}</dd></div>
+        <div><dt>{{ t("Weaver", "তাঁতশিল্পী") }}</dt>
+            <dd>{% if weaver and weaver.show_name_publicly %}{{ weaver.name }}{% else %}{{ t("Registered Cooperative Weaver", "সমবায় সমিতিভুক্ত কারিগর") }}{% endif %}</dd></div>
+        <div><dt>{{ t("Registered on", "নিবন্ধনের তারিখ") }}</dt><dd>{{ reg_date or "—" }}</dd></div>
+        <div><dt>{{ t("Tag ID", "ট্যাগ আইডি") }}</dt><dd class="mono">{{ qr_id }}</dd></div>
+      </dl>
+
+      {% if declared %}
+      <section class="declared">
+        <h2 class="declared-title">{{ t("Declared by the cooperative", "সমবায় কর্তৃক ঘোষিত") }}</h2>
+        <p class="declared-sub">{{ t("Entered by the cooperative at registration. Not measured by TantSaakshi.", "নিবন্ধনের সময় সমবায় জানিয়েছে; তাঁতসাক্ষী মাপেনি।") }}</p>
+        <dl class="facts declared-facts">
+          {% for d in declared %}
+          <div><dt>{{ t(d.label_en, d.label_bn) }}</dt><dd>{% if lang == 'bn' %}{{ d.value_bn }}{% else %}{{ d.value_en }}{% endif %}</dd></div>
+          {% endfor %}
+        </dl>
+      </section>
+      {% endif %}
+
+      <section class="trust">
+        <div class="trust-item">
+          <span class="trust-ico {% if has_fingerprint %}ok{% endif %}" aria-hidden="true">{% if has_fingerprint %}✓{% else %}–{% endif %}</span>
+          <div>
+            <strong>{% if has_fingerprint %}{{ t("Fabric fingerprint recorded", "কাপড়ের ফিঙ্গারপ্রিন্ট সংরক্ষিত") }}{% else %}{{ t("Fabric fingerprint not recorded", "ফিঙ্গারপ্রিন্ট নেই") }}{% endif %}</strong>
+            <p>{{ t("The tiny irregularities of this handwoven cloth are stored privately. A seller can re-photograph the cloth to check it's the same saree.",
+                    "হাতে বোনা কাপড়ের সূক্ষ্ম অসমতা গোপনে সংরক্ষিত। বিক্রেতা আবার ছবি তুলে মিলিয়ে দেখতে পারেন।") }}</p>
+          </div>
+        </div>
+        <div class="trust-item">
+          <span class="trust-ico" aria-hidden="true">{{ check_count }}</span>
+          <div>
+            <strong>{{ t("Checked by sellers", "বিক্রেতার যাচাই") }}</strong>
+            <p>
+            {% if last_check %}
+              {% if last_check.result == 'genuine' %}{{ t("Last check " ~ last_check.date ~ ": same cloth ✓", "শেষ যাচাই " ~ last_check.date ~ ": একই কাপড় ✓") }}
+              {% elif last_check.result == 'no_match' %}{{ t("Last check " ~ last_check.date ~ ": cloth did NOT match", "শেষ যাচাই " ~ last_check.date ~ ": কাপড় মেলেনি") }}
+              {% else %}{{ t("Last check " ~ last_check.date ~ ": recorded (matching is still being calibrated)", "শেষ যাচাই " ~ last_check.date ~ ": সংরক্ষিত (মিলানো এখনও ক্যালিব্রেট হচ্ছে)") }}{% endif %}
+            {% else %}
+              {{ t("Not checked by a seller yet.", "এখনও কোনো বিক্রেতা যাচাই করেননি।") }}
+            {% endif %}
+            </p>
+          </div>
+        </div>
+        <div class="trust-item">
+          <span class="trust-ico" aria-hidden="true">{{ scan_count }}</span>
+          <div>
+            <strong>{{ t("Certificate opened", "সনদ খোলা হয়েছে") }}</strong>
+            <p>{{ t("Times this certificate has been opened, including now.", "এখন সহ মোট কতবার খোলা হয়েছে।") }}</p>
+          </div>
+        </div>
+      </section>
+
+      <details class="how">
+        <summary>{{ t("How this was measured", "কীভাবে মাপা হয়েছে") }}</summary>
+        <ol>
+          <li>{{ t("A printed marker card with a 20 mm window was placed on a plain part of the saree and photographed with a phone.", "২০ মিমি জানালাওয়ালা একটি কার্ড শাড়ির সাধারণ অংশে রেখে ফোনে ছবি তোলা হয়েছে।") }}</li>
+          <li>{{ t("The card's four markers fix the scale and straighten the picture, so every saree is measured the same way.", "কার্ডের চারটি মার্কার মাপ ও কোণ ঠিক রাখে।") }}</li>
+          <li>{{ t("A 2D Fourier transform of the cloth finds the repeating threads: ends (warp) and picks (weft) per inch.", "ফুরিয়ার বিশ্লেষণে টানা ও বানা সুতো প্রতি ইঞ্চি গোনা হয়।") }}</li>
+          <li>{{ t("A quality grade will only be shown once thresholds are agreed with cooperatives and tested on many sarees.", "সমবায়ের সঙ্গে মান নির্ধারণের পরেই গ্রেড দেখানো হবে।") }}</li>
+        </ol>
+        {% if has_closeup %}<p class="photo-link"><a href="/c/{{ qr_id }}/photo" target="_blank" rel="noopener">{{ t("See the full photo taken at registration", "নিবন্ধনের পুরো ছবি দেখুন") }}</a></p>{% endif %}
+      </details>
+
+      <footer class="seal-row">
+        <div class="seal" aria-hidden="true"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="18.5"/><circle cx="20" cy="20" r="15" stroke-dasharray="1.6 2.2"/><circle cx="20" cy="14" r="3.2"/><path d="M13.5 29c0-5 2.9-8.6 6.5-8.6s6.5 3.6 6.5 8.6"/></svg></div>
+        <p>{{ t("Issued by TantSaakshi" ~ (" · " ~ reg_date if reg_date else ""), "তাঁতসাক্ষী কর্তৃক প্রদত্ত") }}</p>
+      </footer>
+      {% endif %}
+
+      <div class="paar paar-bottom" aria-hidden="true"></div>
+    </article>
+
+    <div class="cert-actions">
+      <a class="btn btn-gold" href="/verify">{{ t("Check another saree", "আরেকটি শাড়ি যাচাই") }}</a>
+      {% if state == 4 %}<button type="button" class="btn btn-rose" onclick="window.print()">{{ t("Print / save PDF", "প্রিন্ট") }}</button>{% endif %}
     </div>
+  </div>
+</main>
 
+<footer class="site-footer">
+  <div class="motif-strip" aria-hidden="true"></div>
+  <div class="wrap cert-foot">
+    <p>{{ t("Thread count is measured from a phone photo; grading is provisional while we calibrate with cooperatives.", "ফোনের ছবি থেকে মাপা; গ্রেড এখনও অস্থায়ী।") }}</p>
+    <a href="/">tantsaakshi · {{ t("home", "হোম") }}</a>
+  </div>
+</footer>
 </body>
-
 </html>

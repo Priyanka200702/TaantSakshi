@@ -5,6 +5,7 @@ Transactional saree registration, upload idempotency, and burst photo storage.
 from __future__ import annotations
 
 import datetime
+import json
 import shutil
 from pathlib import Path
 from fastapi import UploadFile, status
@@ -23,6 +24,7 @@ def validate_and_register_saree(
     upload_id: str,
     phone_model: str | None,
     photos: list[UploadFile],
+    declared: dict | None = None,
 ) -> dict:
     """
     Validate registration requirements, preserve original photo burst,
@@ -121,6 +123,7 @@ def validate_and_register_saree(
         image_path=primary_image_path,
         phone_model=phone_model or "Unknown",
         proc_status="queued",
+        declared_json=json.dumps(declared) if declared else None,
         registered_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
     )
     db.add(saree)
@@ -142,3 +145,68 @@ def validate_and_register_saree(
     db.commit()
 
     return {"status": "queued"}
+
+
+# ---------------------------------------------------------------------------
+# Optional details declared by the cooperative (not measured)
+# ---------------------------------------------------------------------------
+DECLARED_CHOICES = {
+    "fibre": {"cotton", "silk", "cotton-silk", "linen", "other"},
+    "dye": {"natural", "chemical", "mixed"},
+    "loom_type": {"pit", "frame", "jacquard", "other"},
+}
+DECLARED_TEXT = {"yarn_count": 24, "border": 80, "motifs": 80}
+DECLARED_NUMBERS = {  # field: (min, max, integer?)
+    "length_m": (1.0, 12.0, False),
+    "weight_g": (50, 3000, True),
+    "days_to_weave": (1, 730, True),
+}
+_DECLARED_LABELS = {
+    "fibre": ("fibre", "সুতোর ধরন"), "dye": ("dye", "রং"), "loom_type": ("loom type", "তাঁতের ধরন"),
+    "yarn_count": ("yarn count", "সুতোর কাউন্ট"), "border": ("border", "পাড়"), "motifs": ("motifs", "নকশা"),
+    "length_m": ("length (metres)", "দৈর্ঘ্য (মিটার)"), "weight_g": ("weight (grams)", "ওজন (গ্রাম)"),
+    "days_to_weave": ("days to weave", "বুনতে কত দিন"),
+}
+
+
+def clean_declared(raw: dict) -> dict | None:
+    """Validate optional details. Empty fields are dropped; returns None if nothing is left."""
+    out: dict = {}
+    for key, value in raw.items():
+        if value is None:
+            continue
+        text = " ".join(str(value).split())
+        if not text:
+            continue
+        if key in DECLARED_CHOICES:
+            text = text.lower()
+            if text not in DECLARED_CHOICES[key]:
+                _bad_declared(key)
+            out[key] = text
+        elif key in DECLARED_TEXT:
+            if len(text) > DECLARED_TEXT[key]:
+                _bad_declared(key)
+            out[key] = text
+        elif key in DECLARED_NUMBERS:
+            lo, hi, is_int = DECLARED_NUMBERS[key]
+            try:
+                num = float(text)
+            except ValueError:
+                _bad_declared(key)
+            if not (lo <= num <= hi) or (is_int and num != int(num)):
+                _bad_declared(key)
+            out[key] = int(num) if is_int else round(num, 2)
+    return out or None
+
+
+def _bad_declared(key: str) -> None:
+    en, bn = _DECLARED_LABELS.get(key, (key, key))
+    from fastapi import HTTPException
+    raise HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail={
+            "code": "BAD_DETAILS",
+            "message_en": f"Please check the saree {en}: it doesn't look right.",
+            "message_bn": f"শাড়ির {bn} ঠিক নেই, অনুগ্রহ করে দেখে নিন।",
+        },
+    )

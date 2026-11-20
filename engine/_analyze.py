@@ -31,6 +31,7 @@ from engine.fft_grade import run_fft_grade
 from engine.fingerprint import extract_fingerprint, extract_fingerprint_from_window
 from engine.match import match_fingerprints
 from engine.quality import evaluate_quality
+from engine.spacing import measure_spacing
 
 
 def _load_image(path_or_array: str | np.ndarray) -> np.ndarray:
@@ -305,6 +306,25 @@ def analyze(
         }
 
     timings["fingerprint"] = (time.perf_counter() - t0) * 1000
+
+    # 7. Thread-spacing evenness, measured directly in the window.
+    spacing = measure_spacing(
+        rect_color_frames[0] if rect_color_frames else stacked_gray, fft_res.get("px_per_thread")
+    )
+    max_tilt = float(cfg.get("spacing", {}).get("max_thread_tilt_deg", 3.0))
+    tilts = {
+        "warp": abs(float(fft_res.get("warp_angle_deg") or 0.0)),
+        "weft": abs(abs(float(fft_res.get("weft_angle_deg") or 90.0)) - 90.0),
+    }
+    for axis, tilt in tilts.items():
+        if tilt > max_tilt and spacing.get(axis, {}).get("reliable"):
+            spacing[axis]["reliable"] = False
+            spacing[axis]["note"] = "threads_tilted"
+
+    # 8. Close-up of the measured cloth (rectified card window) for display.
+    closeup_path = _save_closeup(
+        rect_color_frames[0] if rect_color_frames else None, stacked_gray, out_dir, fp_prefix
+    )
     timings["total"] = (time.perf_counter() - t_start) * 1000
 
     # Success payload matching contract (§6.2)
@@ -327,8 +347,26 @@ def analyze(
         "grade_provisional": True,
         "quality": q_eval["metrics"],
         "fingerprint": fp_result,
+        "closeup_path": closeup_path,
+        "spacing": spacing,
         "timings_ms": timings,
     }
+
+
+def _save_closeup(window_color, window_gray, out_dir: str, prefix: str) -> str | None:
+    """Write the rectified window (the cloth inside the card) as a JPEG. Never raises."""
+    try:
+        img = window_color if window_color is not None else window_gray
+        if img is None:
+            return None
+        if img.dtype != np.uint8:
+            img = np.clip(img, 0, 255).astype(np.uint8)
+        path = Path(out_dir) / f"{prefix}_window.jpg"
+        if not cv2.imwrite(str(path), img, [cv2.IMWRITE_JPEG_QUALITY, 90]):
+            return None
+        return str(path)
+    except Exception:
+        return None
 
 
 def make_fingerprint(image_paths: list[str | np.ndarray], out_dir: str) -> dict[str, Any]:

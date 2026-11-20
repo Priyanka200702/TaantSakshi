@@ -48,3 +48,34 @@ def init_db() -> None:
     """Create all tables defined in models."""
     import backend.models  # noqa: F401
     Base.metadata.create_all(bind=engine)
+    add_missing_columns(engine)
+
+
+# Columns added after the first release. create_all() never alters existing
+# tables, so older databases get them here (all nullable, no data change).
+_LATE_COLUMNS = {
+    "sarees": {
+        "weave_json": "TEXT",
+        "closeup_path": "VARCHAR(512)",
+        "spacing_json": "TEXT",
+        "declared_json": "TEXT",
+    },
+}
+
+
+def add_missing_columns(bind) -> list[str]:
+    """Add any missing late columns. Returns the 'table.column' names added."""
+    from sqlalchemy import inspect, text
+
+    added: list[str] = []
+    insp = inspect(bind)
+    with bind.begin() as conn:
+        for table, cols in _LATE_COLUMNS.items():
+            if not insp.has_table(table):
+                continue
+            have = {c["name"] for c in insp.get_columns(table)}
+            for col, sql_type in cols.items():
+                if col not in have:
+                    conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {col} {sql_type}"))
+                    added.append(f"{table}.{col}")
+    return added

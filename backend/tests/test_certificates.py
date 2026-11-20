@@ -67,7 +67,7 @@ def test_37_to_39_and_41_state_4_full_certificate(client, token_staff_a, test_en
     html_en = resp_en.text
 
     assert "TS-COOPA001" in html_en
-    assert "Verified Genuine Handloom" in html_en
+    assert "Registered Handloom Saree" in html_en
     assert "Dhaniakhali Weavers Society" in html_en
     # Task 2: Under provisional_tpi_only, no letter grade is faked
     assert "Quality grade: provisional / not yet assigned" in html_en

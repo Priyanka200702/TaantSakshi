@@ -91,3 +91,7 @@ fingerprint:
   match_threshold_residual: null  # set from eval_fingerprint.py; null → uncalibrated
   match_threshold_inliers: null   # set from eval_fingerprint.py; null → uncalibrated
 
+# Thread-spacing evenness (engine/spacing.py). Reported per direction only when
+# enough rows are found and the threads are within this angle of the card axes.
+spacing:
+  max_thread_tilt_deg: 3.0

@@ -12,7 +12,7 @@ from backend.config import get_message
 from backend.database import get_db
 from backend.models import Saree, User
 from backend.schemas import SareeRegistrationResponse, SareeStatusResponse
-from backend.services.registration_service import validate_and_register_saree
+from backend.services.registration_service import clean_declared, validate_and_register_saree
 
 router = APIRouter(tags=["Sarees"])
 
@@ -24,6 +24,15 @@ def register_saree(
     upload_id: str = Form(..., description="Client-generated idempotent upload UUID"),
     phone_model: str | None = Form(None, description="Client device model"),
     photos: list[UploadFile] = File(..., description="Burst of up to 5 original JPEG photos"),
+    fibre: str | None = Form(None, description="Optional: cotton | silk | cotton-silk | linen | other"),
+    dye: str | None = Form(None, description="Optional: natural | chemical | mixed"),
+    yarn_count: str | None = Form(None, description="Optional, e.g. 80s x 100s"),
+    border: str | None = Form(None, description="Optional border / paar description"),
+    motifs: str | None = Form(None, description="Optional motifs / buti description"),
+    length_m: str | None = Form(None, description="Optional length in metres (1-12)"),
+    weight_g: str | None = Form(None, description="Optional weight in grams (50-3000)"),
+    days_to_weave: str | None = Form(None, description="Optional days taken to weave (1-730)"),
+    loom_type: str | None = Form(None, description="Optional: pit | frame | jacquard | other"),
     user: User = Depends(require_staff_or_admin),
     db: Session = Depends(get_db),
 ):
@@ -32,6 +41,10 @@ def register_saree(
     Validates QR status, locks tag as 'registered', preserves full-resolution photos,
     and returns {'status': 'queued'} immediately.
     """
+    declared = clean_declared({
+        "fibre": fibre, "dye": dye, "yarn_count": yarn_count, "border": border, "motifs": motifs,
+        "length_m": length_m, "weight_g": weight_g, "days_to_weave": days_to_weave, "loom_type": loom_type,
+    })
     res = validate_and_register_saree(
         db=db,
         user=user,
@@ -40,6 +53,7 @@ def register_saree(
         upload_id=upload_id.strip(),
         phone_model=phone_model.strip() if phone_model else None,
         photos=photos,
+        declared=declared,
     )
     return SareeRegistrationResponse(status=res["status"])
 
