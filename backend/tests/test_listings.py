@@ -101,3 +101,20 @@ def test_ondc_draft_has_only_real_values(client, test_env):
     assert item["tags"]["grade"] == "provisional"
     assert "price" not in item                                         # no invented price
     assert "Government" not in json.dumps(d)
+
+
+def test_share_adds_india_code_to_10_digit_numbers(client, test_env):
+    _saree(test_env, "TS-COOPA001")
+    for raw in ("9800000001", "09800000001", "+91 98000 00001"):
+        url = client.post("/listings/TS-COOPA001/share", json={"to": raw}).json()["share_url"]
+        assert url.startswith("https://wa.me/919800000001?text="), (raw, url)
+
+
+def test_legacy_listing_hides_unfinished_sarees(client, test_env):
+    _saree(test_env, "TS-COOPA001", status="failed")
+    r = client.get("/listing/TS-COOPA001")
+    assert r.status_code == 404 and r.json()["code"] == "LISTING_NOT_READY"
+    assert "retaken" in r.json()["message_en"]
+    _saree(test_env, "TS-COOPA002", status="processing")
+    r = client.get("/listing/TS-COOPA002")
+    assert r.status_code == 404 and "being prepared" in r.json()["message_en"]

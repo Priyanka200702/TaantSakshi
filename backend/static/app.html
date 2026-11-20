@@ -388,6 +388,7 @@ textarea { resize: vertical; min-height: 80px; }
 .recheck-result { margin-top: 1rem; padding: .85rem 1.2rem; border-radius: var(--radius); font-size: .85rem; border: 1.5px solid; }
 .recheck-genuine { border-color: #86efac; background: #f0fdf4; color: #14532d; }
 .recheck-no_match { border-color: #fca5a5; background: #fef2f2; color: #7f1d1d; }
+.recheck-pending { border-color: #e0bf62; background: #fff8e6; color: #5a3a00; }
 
 /* ═══════════════════════════════════════
    STUDIO (VOICE-TO-COMMERCE) STYLES
@@ -651,7 +652,7 @@ footer {
     <div class="hero-stats">
       <div class="stat-cell">
         <span class="stat-icon">🛡</span>
-        <div class="stat-text"><b>Verified Quality</b>with Thread Count</div>
+        <div class="stat-text"><b>Measured Quality</b>thread count from the cloth</div>
       </div>
       <div class="stat-cell">
         <span class="stat-icon">📊</span>
@@ -766,10 +767,8 @@ footer {
       </button>
     </form>
 
-    <div class="demo-chips">
+    <div class="demo-chips" id="demoChips" style="display:none">
       <span style="text-transform:uppercase;letter-spacing:.2em">Try live:</span>
-      <button class="demo-chip" onclick="useDemoId('TS-HXW92XBU')">TS-HXW92XBU</button>
-      <button class="demo-chip" onclick="useDemoId('TS-BBT6J45C')">TS-BBT6J45C</button>
     </div>
 
     <!-- 📸 CAMERA CAPTURE SECTION -->
@@ -1009,7 +1008,7 @@ footer {
 <div id="page-catalogue" class="page">
   <div class="catalogue-wrapper">
     <div class="page-header">
-      <div class="eyebrow" style="color:var(--gold-mid)">Verified collection</div>
+      <div class="eyebrow" style="color:var(--gold-mid)">Certified collection</div>
       <h1>Masterworks with a witness</h1>
       <p style="font-family:'Noto Serif Bengali',serif;color:var(--text-muted);margin-top:.5rem">যাচাইকৃত সংগ্রহ — প্রতিটি শাড়ির জন্ম সনদ আছে</p>
       <div class="paisley-divider"></div>
@@ -1234,6 +1233,11 @@ function logout() {
 }
 
 /* ── API ── */
+// crypto.randomUUID only exists on HTTPS/localhost; phones on plain Wi-Fi need a fallback.
+function newUploadId() {
+  if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+  return 'up-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
+}
 async function apiFetch(method, path, body, isForm) {
   const opts = { method, headers: {} };
   if (authToken) opts.headers['Authorization'] = 'Bearer ' + authToken;
@@ -1246,8 +1250,15 @@ async function apiFetch(method, path, body, isForm) {
   const r = await fetch(path, opts);
   if (!r.ok) {
     let msg = 'Request failed';
-    try { const d = await r.json(); msg = d.message_en || d.detail || msg; } catch {}
-    throw new Error(msg);
+    try {
+      const d = await r.json();
+      if (d.message_en) msg = d.message_en + (d.message_bn ? ' · ' + d.message_bn : '');
+      else if (Array.isArray(d.detail)) msg = 'Some details are missing or invalid: ' + d.detail.map(x => (x.loc || []).slice(-1)[0]).join(', ');
+      else if (typeof d.detail === 'string') msg = d.detail;
+      else if (d.detail && d.detail.message_en) msg = d.detail.message_en;
+    } catch {}
+    const e = new Error(msg); e.status = r.status;
+    throw e;
   }
   const ct = r.headers.get('content-type') || '';
   if (ct.includes('application/json')) return r.json();
@@ -1409,12 +1420,19 @@ async function doRecheck() {
 
   try {
     const fd = new FormData();
-    fd.append('upload_id', crypto.randomUUID());
+    fd.append('upload_id', newUploadId());
     selectedPhotos.slice(0, 3).forEach(f => fd.append('photos', f));
     const r = await apiFetch('POST', `/verify/${qrId}`, fd, true);
+    const RES = {
+      genuine:        ['recheck-genuine',  'Same cloth ✓ · একই কাপড়'],
+      no_match:       ['recheck-no_match', 'Did NOT match ✗ · মেলেনি'],
+      not_calibrated: ['recheck-pending',  'Recorded — matching not calibrated yet · এখনও ক্যালিব্রেট হয়নি'],
+      retake:         ['recheck-pending',  'Photo unclear — please retake · আবার ছবি তুলুন'],
+    };
+    const [cls, label] = RES[r.result] || ['recheck-pending', r.result];
     resDiv.innerHTML = `
-      <div class="recheck-result recheck-genuine">
-        <b style="text-transform:uppercase;letter-spacing:.15em">${r.result}</b>
+      <div class="recheck-result ${cls}">
+        <b style="letter-spacing:.06em">${label}</b>
         ${r.score != null ? `<span style="font-family:monospace;font-size:.8rem;margin-left:.75rem">score ${r.score.toFixed(3)}</span>` : ''}
         ${r.message_en ? `<p style="margin-top:.4rem">${r.message_en}</p>` : ''}
       </div>`;
@@ -1745,7 +1763,7 @@ function renderCatalogue() {
     <article class="cat-card" onclick="openDetail(${idx})">
       <div class="cat-card-img">
         <img src="${craftImg(item)}" alt="${item.saree_type}" loading="lazy" onerror="this.onerror=null;this.src='/static/saree-corners.svg'"/>
-        <span class="cat-badge-verified">${item.tag_status === 'listed' ? 'Verified · Listed' : 'Verified'}</span>
+        <span class="cat-badge-verified">${item.tag_status === 'listed' ? 'Certified · Listed' : 'Certified'}</span>
       </div>
       <div class="cat-card-body">
         <div class="cat-name">${item.saree_type} Saree</div>
@@ -1821,7 +1839,7 @@ async function loadWeavers() {
   try {
     const d = await apiFetch('GET', '/weavers');
     const sel = document.getElementById('weaverSelect');
-    sel.innerHTML = (d.weavers || d).map(w => `<option value="${w.id}">${w.name} · ${w.village || ''}</option>`).join('');
+    sel.innerHTML = (d.weavers || d).map(w => `<option value="${w.id}">${w.name}${w.village ? ' · ' + w.village : ''}</option>`).join('');
   } catch {
     document.getElementById('weaverSelect').innerHTML = '<option value="">Could not load weavers</option>';
   }
@@ -1833,7 +1851,13 @@ async function generateTags() {
   res.innerHTML = '<span style="color:var(--text-muted)">Generating…</span>';
   try {
     const d = await apiFetch('POST', '/tags/generate', { count });
-    res.innerHTML = `<div style="color:#15803d;font-weight:600">✓ ${count} tags generated — Batch <code>${d.batch_no}</code><br><a href="${d.pdf_url}" target="_blank" class="btn-gold" style="margin-top:.5rem;display:inline-flex;padding:.4rem .8rem;font-size:.7rem">Download PDF</a></div>`;
+    // The PDF needs the login token, so fetch it here and hand the browser a local file.
+    const pdfPath = new URL(d.pdf_url, location.origin).pathname;
+    const pr = await fetch(pdfPath, { headers: { Authorization: 'Bearer ' + authToken } });
+    if (!pr.ok) throw new Error('Tag sheet could not be downloaded');
+    const url = URL.createObjectURL(await pr.blob());
+    const name = pdfPath.split('/').pop();
+    res.innerHTML = `<div style="color:#15803d;font-weight:600">✓ ${d.count || count} tags generated — Batch <code>${d.batch_no}</code><br><a href="${url}" download="${name}" class="btn-gold" style="margin-top:.5rem;display:inline-flex;padding:.4rem .8rem;font-size:.7rem">Download PDF</a></div>`;
   } catch (err) { res.innerHTML = `<span style="color:#b91c1c">Error: ${err.message}</span>`; }
 }
 
@@ -1844,7 +1868,7 @@ async function createBatch() {
   const res = document.getElementById('batchResult');
   res.innerHTML = '<span style="color:var(--text-muted)">Creating batch…</span>';
   try {
-    const d = await apiFetch('POST', '/batch', { weaver_id: parseInt(weaverId), saree_type: sareeType });
+    const d = await apiFetch('POST', '/batch', { weaver_id: weaverId, saree_type: sareeType });
     res.innerHTML = `<div style="color:#15803d;font-weight:600">✓ Batch created — ID <code>${d.batch_id}</code></div>`;
     document.getElementById('regBatchId').value = d.batch_id;
   } catch (err) { res.innerHTML = `<span style="color:#b91c1c">Error: ${err.message}</span>`; }
@@ -1871,14 +1895,40 @@ async function registerSaree() {
     const fd = new FormData();
     fd.append('qr_id', qrId);
     fd.append('batch_id', batchId);
-    fd.append('upload_id', crypto.randomUUID());
+    fd.append('upload_id', newUploadId());
     fd.append('phone_model', 'web');
     regPhotos.forEach(f => fd.append('photos', f));
     await apiFetch('POST', '/saree', fd, true);
-    res.innerHTML = `<div style="color:#15803d;font-weight:600">✓ Saree registered! <a href="/c/${qrId}" target="_blank" class="btn-luxe" style="margin-top:.5rem;display:inline-flex;padding:.4rem .8rem;font-size:.68rem">View certificate</a></div>`;
     regPhotos = []; renderPhotoPreviews([], 'regPhotoPreview', 'regPhotoCount', null);
+    await waitForAnalysis(qrId, res);
   } catch (err) { res.innerHTML = `<span style="color:#b91c1c">Error: ${err.message}</span>`; }
   finally { btn.disabled = false; btn.textContent = 'Register Saree'; }
+}
+
+// Poll the saree status after upload: show the thread count, or the reason a retake is needed.
+async function waitForAnalysis(qrId, res) {
+  const t0 = Date.now();
+  res.innerHTML = '<span style="color:var(--text-muted)">Photos uploaded — measuring the weave… · বুনন মাপা হচ্ছে…</span>';
+  while (Date.now() - t0 < 5 * 60 * 1000) {
+    let s = null;
+    try { s = await apiFetch('GET', `/saree/${encodeURIComponent(qrId)}`); } catch (e) { if (e.status === 401) { showPage('login'); return; } }
+    if (s && s.status === 'done') {
+      const f = v => (v == null ? '—' : Number(v).toFixed(1));
+      res.innerHTML = `<div style="color:#15803d;font-weight:600">✓ Certificate ready · ${f(s.ends_per_inch)} × ${f(s.picks_per_inch)} threads/inch
+        <br><a href="/c/${qrId}" target="_blank" class="btn-luxe" style="margin-top:.5rem;display:inline-flex">View certificate →</a></div>`;
+      return;
+    }
+    if (s && s.status === 'failed') {
+      res.innerHTML = `<div style="color:#b91c1c;font-weight:600">✗ Photo couldn't be used: ${s.reason || 'please take the photos again'}
+        ${s.reason_bn ? `<br><span style="font-family:'Noto Serif Bengali',serif;font-weight:400">${s.reason_bn}</span>` : ''}
+        <br><span style="font-weight:400;color:var(--text-mid)">The tag is still free — take new photos and register again with the same tag ID.</span></div>`;
+      return;
+    }
+    if (s && s.status === 'processing') res.innerHTML = '<span style="color:var(--text-muted)">Measuring the weave — thread count and fabric fingerprint… · বুনন মাপা হচ্ছে…</span>';
+    else if (Date.now() - t0 > 45000) res.innerHTML = '<span style="color:var(--text-muted)">Still waiting — check that the analysis worker is running.</span>';
+    await new Promise(r => setTimeout(r, 2000));
+  }
+  res.innerHTML = '<span style="color:#b91c1c">Analysis is taking too long. Check this tag again later.</span>';
 }
 
 /* ── Init & URL routing ── */
@@ -1899,6 +1949,16 @@ if (path === 'studio' || window.location.hash === '#studio') {
 
 apiFetch('GET', '/listings').then(d => {
   const items = d.listings || [];
+  // "Try live" chips: the most recent real certificates (none shown if nothing is registered yet)
+  const chips = document.getElementById('demoChips');
+  if (chips && items.length) {
+    items.slice(0, 2).forEach(it => {
+      const b = document.createElement('button');
+      b.className = 'demo-chip'; b.textContent = it.qr_id; b.onclick = () => useDemoId(it.qr_id);
+      chips.appendChild(b);
+    });
+    chips.style.display = '';
+  }
   if (items.length && items[0].ends_per_inch) {
     document.getElementById('heroEpi').textContent = `EPI ${items[0].ends_per_inch.toFixed(1)}`;
   }

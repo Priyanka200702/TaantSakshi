@@ -126,6 +126,20 @@ def get_listing_details(
         if batch:
             saree = db.query(Saree).filter(Saree.batch_id == batch.id, Saree.proc_status == "done").first()
 
+    if saree and saree.proc_status != "done":
+        # Found, but no certificate yet: say so instead of showing it as registered.
+        failed = saree.proc_status == "failed"
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={
+                "code": "LISTING_NOT_READY",
+                "message_en": "Photos need to be retaken before this certificate is issued."
+                if failed else "This certificate is still being prepared. Try again in a minute.",
+                "message_bn": "সনদ দেওয়ার আগে কাপড়ের ছবি আবার তুলতে হবে।"
+                if failed else "সনদ এখনও তৈরি হচ্ছে। একটু পরে আবার দেখুন।",
+            },
+        )
+
     if not saree:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -234,6 +248,10 @@ def share_listing(qr_id: str, payload: SharePayload, db: Session = Depends(get_d
         f"📜 Birth certificate: {BASE_URL}/c/{clean_qr}"
     )
     phone = "".join(ch for ch in (payload.to or "") if ch.isdigit())
+    if len(phone) == 11 and phone.startswith("0"):
+        phone = phone[1:]
+    if len(phone) == 10:          # Indian mobile without country code
+        phone = "91" + phone
     encoded = urllib.parse.quote(text)
     share_url = f"https://wa.me/{phone}?text={encoded}" if phone else f"https://wa.me/?text={encoded}"
     return {"sent": False, "share_url": share_url, "message": "Share link generated"}
