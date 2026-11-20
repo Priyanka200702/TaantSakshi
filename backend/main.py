@@ -8,7 +8,7 @@ import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from backend.config import BACKEND_DIR, TAGS_PDF_DIR, get_message
@@ -115,11 +115,54 @@ app.include_router(admin.router)
 app.include_router(listings.router)
 
 
-@app.get("/", tags=["System"])
+@app.get("/", include_in_schema=False)
+def frontend_root():
+    """Serve the cooperative and seller phone-first web app on root."""
+    return FileResponse(str(static_dir / "app.html"), media_type="text/html")
+
+
+@app.get("/api/health", tags=["System"])
 def root():
     """Service health and index."""
     return {
         "service": "TantSaakshi Handloom Authenticity Backend",
         "status": "online",
+        "app": "/app",
         "documentation": "/docs",
     }
+
+
+@app.get("/app", include_in_schema=False)
+def frontend_app():
+    """Serve the cooperative and seller phone-first web app."""
+    return FileResponse(str(static_dir / "app.html"), media_type="text/html")
+
+@app.get("/studio", include_in_schema=False)
+def frontend_studio():
+    return FileResponse(str(static_dir / "app.html"), media_type="text/html")
+
+@app.get("/verify", include_in_schema=False)
+def frontend_verify():
+    return FileResponse(str(static_dir / "app.html"), media_type="text/html")
+
+@app.get("/catalogue", include_in_schema=False)
+def frontend_catalogue():
+    return FileResponse(str(static_dir / "app.html"), media_type="text/html")
+
+@app.get("/login", include_in_schema=False)
+def frontend_login():
+    return FileResponse(str(static_dir / "app.html"), media_type="text/html")
+
+@app.get("/register", include_in_schema=False)
+def frontend_register():
+    return FileResponse(str(static_dir / "app.html"), media_type="text/html")
+
+
+@app.get("/service-worker.js", include_in_schema=False)
+def frontend_service_worker():
+    """Allow the app shell and queued uploads to work offline on supported browsers."""
+    return FileResponse(
+        str(static_dir / "sw.js"),
+        media_type="application/javascript",
+        headers={"Service-Worker-Allowed": "/", "Cache-Control": "no-cache"},
+    )

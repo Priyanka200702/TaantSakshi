@@ -77,6 +77,7 @@ class SareeRegistrationResponse(BaseModel):
 
 class SareeStatusResponse(BaseModel):
     status: Literal["queued", "processing", "done", "failed"]
+    code: str | None = None
     grade: str | None = None
     ends_per_inch: float | None = None
     picks_per_inch: float | None = None

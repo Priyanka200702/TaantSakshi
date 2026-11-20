@@ -1,0 +1,304 @@
+import React, { useEffect, useState } from "react";
+import { BrowserRouter } from "react-router-dom";
+import { AuthCtx } from "@/pages/Login";
+import { auth } from "@/lib/api";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
+import Home from "@/pages/Home";
+import Login from "@/pages/Login";
+import Verify, { ScanCert } from "@/pages/Verify";
+import Catalogue from "@/pages/Catalogue";
+import Register from "@/pages/Register";
+import Studio from "@/pages/Studio";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
+
+function ScrollToTop() {
+    const { pathname } = useLocation();
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, [pathname]);
+    return null;
+}
+
+function AuthProvider({ children }) {
+    const [user, setUser] = useState(auth.get());
+    useEffect(() => {
+        const sync = () => setUser(auth.get());
+        window.addEventListener("ts-auth", sync);
+        return () => window.removeEventListener("ts-auth", sync);
+    }, []);
+    return <AuthCtx.Provider value={{ user, refresh: () => setUser(auth.get()) }}>{children}</AuthCtx.Provider>;
+}
+
+function AppInner() {
+    return (
+        <div className="flex min-h-screen flex-col">
+            <Navbar />
+            <div className="flex-1">
+                <Routes>
+                    <Route path="/app" element={<Home />} />
+                    <Route path="/" element={<Home />} />
+                    <Route path="/verify" element={<Verify />} />
+                    <Route path="/c/:qrId" element={<ScanCert />} />
+                    <Route path="/catalogue" element={<Catalogue />} />
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/register" element={<Register />} />
+                    <Route path="/studio" element={<Studio />} />
+                    <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+            </div>
+            <Footer />
+        </div>
+    );
+}
+
+export default function App() {
+    return (
+        <BrowserRouter>
+            <AuthProvider>
+                <ScrollToTop />
+                <AppInner />
+            </AuthProvider>
+        </BrowserRouter>
+    );
+}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    :root {
+        --background: 33 100% 98%;
+        --foreground: 24 55% 12%;
+        --card: 0 0% 100%;
+        --card-foreground: 24 55% 12%;
+        --popover: 0 0% 100%;
+        --popover-foreground: 24 55% 12%;
+        --primary: 345 78% 25%;
+        --primary-foreground: 40 60% 96%;
+        --secondary: 39 60% 92%;
+        --secondary-foreground: 24 55% 12%;
+        --muted: 36 45% 94%;
+        --muted-foreground: 22 25% 40%;
+        --accent: 45 65% 51%;
+        --accent-foreground: 345 78% 15%;
+        --destructive: 0 84.2% 60.2%;
+        --destructive-foreground: 0 0% 98%;
+        --border: 33 40% 85%;
+        --input: 33 40% 85%;
+        --ring: 45 65% 51%;
+        --radius: 0.25rem;
+
+        --maroon-950: #3a0a13;
+        --maroon-900: #4a0d18;
+        --maroon-800: #5e1220;
+        --maroon-700: #75182c;
+        --maroon-600: #8b263e;
+        --gold-600: #b08d2e;
+        --gold-500: #d4af37;
+        --gold-300: #e9d38a;
+        --cream: #fffbf7;
+        --ivory: #fff7ee;
+        --ink: #2c1810;
+    }
+
+    body {
+        font-family: "Plus Jakarta Sans", sans-serif;
+        background-color: var(--cream);
+        color: var(--ink);
+        -webkit-font-smoothing: antialiased;
+    }
+}
+
+.font-display {
+    font-family: "Playfair Display", "Cormorant Garamond", serif;
+}
+.font-cormorant {
+    font-family: "Cormorant Garamond", serif;
+}
+.font-bengali {
+    font-family: "Noto Serif Bengali", serif;
+}
+
+/* ---------- surfaces & textures ---------- */
+.maroon-panel {
+    background-color: var(--maroon-900);
+    background-image:
+        repeating-linear-gradient(90deg, rgba(212, 175, 55, 0.05) 0 1px, transparent 1px 3px),
+        repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.22) 0 1px, transparent 1px 4px),
+        radial-gradient(120% 90% at 20% 0%, rgba(139, 38, 62, 0.55) 0%, transparent 60%);
+}
+.weave-panel {
+    background-color: var(--ivory);
+    background-image:
+        repeating-linear-gradient(90deg, rgba(139, 38, 62, 0.045) 0 1px, transparent 1px 3px),
+        repeating-linear-gradient(0deg, rgba(176, 141, 46, 0.05) 0 1px, transparent 1px 3px);
+}
+.paper-grain {
+    position: relative;
+}
+.paper-grain::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.5;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");
+}
+.glass-cream {
+    background: rgba(255, 251, 247, 0.82);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+}
+
+/* ---------- borders & ornament ---------- */
+.gold-frame {
+    border: 1px solid rgba(212, 175, 55, 0.65);
+    box-shadow:
+        inset 0 0 0 1px rgba(255, 251, 247, 0.9),
+        inset 0 0 0 4px rgba(212, 175, 55, 0.28),
+        0 24px 50px -24px rgba(58, 10, 19, 0.35);
+}
+.temple-edge {
+    height: 14px;
+    background-image:
+        linear-gradient(135deg, var(--gold-500) 25%, transparent 25%),
+        linear-gradient(225deg, var(--gold-500) 25%, transparent 25%);
+    background-size: 14px 14px;
+    background-position: 0 0;
+    opacity: 0.85;
+}
+.paisley-band {
+    height: 22px;
+    background-repeat: repeat-x;
+    background-position: center;
+    background-size: auto 22px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='88' height='22' viewBox='0 0 88 22'%3E%3Cg fill='none' stroke='%23d4af37' stroke-width='1.4'%3E%3Cpath d='M8 11c0-5 7-7 10-3s-2 9-6 7-4-4-4-4z'/%3E%3Ccircle cx='15' cy='8.6' r='1' fill='%23d4af37' stroke='none'/%3E%3Cpath d='M30 11c0-5 7-7 10-3s-2 9-6 7-4-4-4-4z' transform='scale(-1,1) translate(-70,0)'/%3E%3Cpath d='M44 3v16' stroke-dasharray='2 3'/%3E%3Ccircle cx='44' cy='11' r='2.2'/%3E%3C/g%3E%3C/svg%3E");
+}
+.paisley-band-dark {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='88' height='22' viewBox='0 0 88 22'%3E%3Cg fill='none' stroke='%23b08d2e' stroke-width='1.4'%3E%3Cpath d='M8 11c0-5 7-7 10-3s-2 9-6 7-4-4-4-4z'/%3E%3Ccircle cx='15' cy='8.6' r='1' fill='%23b08d2e' stroke='none'/%3E%3Cpath d='M30 11c0-5 7-7 10-3s-2 9-6 7-4-4-4-4z' transform='scale(-1,1) translate(-70,0)'/%3E%3Cpath d='M44 3v16' stroke-dasharray='2 3'/%3E%3Ccircle cx='44' cy='11' r='2.2'/%3E%3C/g%3E%3C/svg%3E");
+}
+.gold-rule {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.8), transparent);
+}
+
+/* ---------- typography helpers ---------- */
+.gold-text {
+    background: linear-gradient(100deg, #b08d2e 0%, #e9d38a 40%, #d4af37 70%, #9a7a24 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+.eyebrow {
+    letter-spacing: 0.42em;
+    text-transform: uppercase;
+    font-size: 0.66rem;
+    font-weight: 600;
+}
+
+/* ---------- buttons ---------- */
+.luxe-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    background: linear-gradient(120deg, #8b263e, #5e1220);
+    color: #f7e9c4;
+    border: 1px solid rgba(212, 175, 55, 0.8);
+    box-shadow: 0 14px 30px -14px rgba(74, 13, 24, 0.7);
+    transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s, filter 0.25s;
+}
+.luxe-btn:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.08);
+    box-shadow: 0 20px 36px -14px rgba(74, 13, 24, 0.8);
+}
+.luxe-btn-gold {
+    background: linear-gradient(120deg, #d4af37, #b08d2e);
+    color: #3a0a13;
+    border: 1px solid rgba(255, 251, 247, 0.55);
+}
+.luxe-btn-ghost {
+    background: rgba(255, 251, 247, 0.6);
+    color: var(--maroon-800);
+    border: 1px solid rgba(139, 38, 62, 0.35);
+}
+.luxe-btn-ghost:hover {
+    background: rgba(255, 247, 238, 0.95);
+}
+
+/* ---------- motion ---------- */
+@keyframes fadeUp {
+    from { opacity: 0; transform: translateY(26px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.fade-up {
+    animation: fadeUp 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.d1 { animation-delay: 0.08s; }
+.d2 { animation-delay: 0.2s; }
+.d3 { animation-delay: 0.34s; }
+.d4 { animation-delay: 0.5s; }
+.d5 { animation-delay: 0.66s; }
+
+@keyframes slowSpin {
+    to { transform: rotate(360deg); }
+}
+.mandala-spin {
+    animation: slowSpin 26s linear infinite;
+}
+
+@keyframes pulseRing {
+    0% { transform: scale(1); opacity: 0.55; }
+    100% { transform: scale(1.9); opacity: 0; }
+}
+.pulse-ring {
+    position: relative;
+}
+.pulse-ring::before,
+.pulse-ring::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 9999px;
+    border: 2px solid var(--gold-500);
+    animation: pulseRing 1.6s ease-out infinite;
+}
+.pulse-ring::after {
+    animation-delay: 0.8s;
+}
+
+@keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+.shimmer {
+    background: linear-gradient(110deg, rgba(212,175,55,0.0) 40%, rgba(233,211,138,0.35) 50%, rgba(212,175,55,0.0) 60%);
+    background-size: 200% 100%;
+    animation: shimmer 3.2s linear infinite;
+}
+
+/* ---------- misc ---------- */
+.tabular {
+    font-variant-numeric: tabular-nums;
+}
+input, select, textarea {
+    outline: none;
+}
+::selection {
+    background: rgba(212, 175, 55, 0.4);
+    color: var(--maroon-950);
+}
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+::-webkit-scrollbar-track {
+    background: var(--ivory);
+}
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(#b08d2e, #8b263e);
+    border-radius: 8px;
+    border: 2px solid var(--ivory);
+}

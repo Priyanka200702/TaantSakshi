@@ -9,6 +9,9 @@ The vision engine for TantSaakshi turns saree photos into thread density counts 
   pip install -r requirements-engine.txt
   ```
 
+## Phone-First Web App
+The cooperative and seller app is served by the FastAPI backend at `http://localhost:8000/app`. It includes bilingual registration, camera capture, verification, and an offline upload queue. See [backend/README.md](backend/README.md) for setup and camera requirements.
+
 ## Repository Structure
 ```
 ├── config.yaml               # Central engine configuration (geometry, thresholds, bands)

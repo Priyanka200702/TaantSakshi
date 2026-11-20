@@ -73,6 +73,7 @@ def get_saree_status(
 
     return SareeStatusResponse(
         status=saree.proc_status,
+        code=saree.proc_error_code,
         grade=saree.grade,
         ends_per_inch=saree.epi,
         picks_per_inch=saree.ppi,

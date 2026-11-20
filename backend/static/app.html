@@ -1,0 +1,1906 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="theme-color" content="#4A0D18"/>
+<meta name="description" content="TantSaakshi — thread-verified Bengal handloom. Register at the loom, verify the weave, sell with your voice."/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;0,800;0,900;1,500;1,600;1,700&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Serif+Bengali:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<title>TantSaakshi · তাঁতসাক্ষী — Thread-Verified Bengal Handloom</title>
+<style>
+/* ═══════════════════════════════════════
+   DESIGN TOKENS — Luxury Maroon & Gold Heritage
+═══════════════════════════════════════ */
+:root {
+  --maroon: #4a0d18;
+  --maroon-dark: #3a0a13;
+  --maroon-mid: #8b263e;
+  --maroon-light: #5e1220;
+  --gold: #d4af37;
+  --gold-light: #e9d38a;
+  --gold-mid: #b08d2e;
+  --cream: #fffdf8;
+  --cream-warm: #fff7ee;
+  --tan: #f5ede0;
+  --text-dark: #3a1206;
+  --text-mid: #5e4936;
+  --text-muted: #785c50;
+  --text-muted2: #a08a6e;
+  --border-gold: rgba(212,175,55,.5);
+  --radius: 4px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  background: var(--cream);
+  color: var(--text-dark);
+  min-height: 100vh;
+  line-height: 1.6;
+}
+
+/* ── Typography ── */
+.font-display { font-family: 'Playfair Display', Georgia, serif; }
+.font-bengali { font-family: 'Noto Serif Bengali', serif; }
+.eyebrow {
+  font-size: .65rem;
+  letter-spacing: .25em;
+  text-transform: uppercase;
+  font-weight: 700;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+h1, h2, h3, h4 { font-family: 'Playfair Display', Georgia, serif; }
+
+/* ── Utilities ── */
+.weave-bg {
+  background: repeating-linear-gradient(90deg, transparent, transparent 19px, rgba(212,175,55,.06) 20px),
+              repeating-linear-gradient(0deg, transparent, transparent 19px, rgba(212,175,55,.06) 20px),
+              var(--cream-warm);
+}
+.paper-grain {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+}
+
+/* ── Buttons ── */
+.btn-luxe {
+  display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+  background: var(--maroon); color: var(--gold-light);
+  border: none; padding: .75rem 1.5rem; cursor: pointer;
+  font-family: 'Plus Jakarta Sans', sans-serif; font-size: .72rem;
+  font-weight: 700; letter-spacing: .22em; text-transform: uppercase;
+  border-radius: var(--radius); transition: all .2s ease;
+  text-decoration: none;
+}
+.btn-luxe:hover { background: var(--maroon-light); transform: translateY(-1px); }
+.btn-luxe:active { transform: translateY(0); }
+.btn-luxe:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+
+.btn-ghost {
+  display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+  background: transparent; color: var(--maroon);
+  border: 1.5px solid var(--maroon);
+  padding: .7rem 1.5rem; cursor: pointer;
+  font-family: 'Plus Jakarta Sans', sans-serif; font-size: .72rem;
+  font-weight: 700; letter-spacing: .2em; text-transform: uppercase;
+  border-radius: var(--radius); transition: all .2s ease;
+  text-decoration: none;
+}
+.btn-ghost:hover { background: var(--maroon); color: var(--gold-light); }
+
+.btn-gold {
+  display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+  background: var(--gold); color: var(--maroon);
+  border: none; padding: .75rem 1.5rem; cursor: pointer;
+  font-family: 'Plus Jakarta Sans', sans-serif; font-size: .72rem;
+  font-weight: 700; letter-spacing: .2em; text-transform: uppercase;
+  border-radius: var(--radius); transition: all .2s ease;
+  text-decoration: none;
+}
+.btn-gold:hover { background: var(--gold-mid); transform: translateY(-1px); }
+
+/* ── Inputs ── */
+input, select, textarea {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  border: 1.5px solid var(--border-gold);
+  background: var(--cream-warm);
+  color: var(--text-dark);
+  border-radius: var(--radius);
+  padding: .75rem 1rem;
+  width: 100%;
+  font-size: .9rem;
+  outline: none;
+  transition: border-color .2s;
+}
+input:focus, select:focus, textarea:focus { border-color: var(--maroon-mid); }
+textarea { resize: vertical; min-height: 80px; }
+
+/* ═══════════════════════════════════════
+   NAVBAR
+═══════════════════════════════════════ */
+#navbar {
+  position: sticky; top: 0; z-index: 100;
+  background: var(--cream);
+  border-bottom: 1px solid var(--border-gold);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: .85rem 2.5rem;
+  box-shadow: 0 2px 24px rgba(74,13,24,.06);
+}
+.nav-brand { display: flex; align-items: center; gap: .75rem; text-decoration: none; }
+.nav-brand-icon {
+  width: 38px; height: 38px; border-radius: 50%;
+  border: 1.5px solid var(--border-gold);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--gold-mid); font-size: 1.1rem;
+}
+.nav-brand-name { font-family: 'Playfair Display', serif; font-size: 1.35rem; font-weight: 700; color: var(--maroon); }
+.nav-brand-sub { font-family: 'Noto Serif Bengali', serif; font-size: .65rem; color: var(--text-muted); display: block; line-height: 1; }
+
+.nav-links { display: flex; align-items: center; gap: 1.75rem; }
+.nav-link {
+  color: var(--text-mid); font-size: .84rem; font-weight: 600;
+  text-decoration: none; cursor: pointer; background: none; border: none;
+  display: flex; align-items: center; gap: .35rem;
+  transition: color .2s; padding: .25rem 0;
+  position: relative;
+}
+.nav-link:hover, .nav-link.active { color: var(--maroon); }
+.nav-link.active::after {
+  content: ''; position: absolute; bottom: -4px; left: 0; right: 0;
+  height: 2px; background: var(--gold); border-radius: 2px;
+}
+.nav-link .bn { font-family: 'Noto Serif Bengali', serif; font-size: .72rem; opacity: .75; }
+
+/* Gold decorative border strip */
+.gold-strip {
+  height: 28px;
+  background: linear-gradient(90deg, var(--maroon) 0%, var(--maroon-light) 50%, var(--maroon) 100%);
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden; position: relative;
+}
+.gold-strip::before {
+  content: '◈ ◇ ◈ ◇ ◈ ◇ ◈ ◇ ◈ ◇ ◈ ◇ ◈ ◇ ◈ ◇ ◈ ◇ ◈ ◇ ◈ ◇ ◈ ◇ ◈ ◇ ◈ ◇ ◈ ◇ ◈ ◇ ◈ ◇ ◈ ◇ ◈ ◇ ◈ ◇ ◈ ◇ ◈ ◇';
+  color: rgba(212,175,55,.5);
+  font-size: .6rem; letter-spacing: .35rem;
+  position: absolute; width: 200%; text-align: center;
+}
+
+/* ═══════════════════════════════════════
+   PAGE ROUTER
+═══════════════════════════════════════ */
+.page { display: none; }
+.page.active { display: block; }
+
+/* ═══════════════════════════════════════
+   HOME PAGE
+═══════════════════════════════════════ */
+.hero {
+  background: var(--maroon);
+  min-height: calc(100vh - 120px);
+  display: grid; grid-template-columns: 1fr 1fr;
+  align-items: center;
+  padding: 5rem 4rem;
+  gap: 4rem;
+  position: relative; overflow: hidden;
+}
+.hero::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 20% 50%, rgba(212,175,55,.08) 0%, transparent 60%),
+             repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(212,175,55,.03) 40px),
+             repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(212,175,55,.03) 40px);
+}
+.hero-content { position: relative; z-index: 1; }
+.hero-eyebrow {
+  font-size: .68rem; letter-spacing: .35em; text-transform: uppercase;
+  color: var(--gold); font-weight: 700; margin-bottom: 1.5rem;
+}
+.hero-eyebrow .bn { font-family: 'Noto Serif Bengali', serif; margin-left: .75rem; text-transform: none; letter-spacing: 0; opacity: .8; font-size: .78rem; }
+.hero-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(2.5rem, 5vw, 4.2rem);
+  font-weight: 800; line-height: 1.1;
+  color: #f2e3c8; margin-bottom: 1rem;
+}
+.hero-title em { font-style: italic; color: var(--gold); display: block; }
+.hero-bn { font-family: 'Noto Serif Bengali', serif; color: rgba(242,227,200,.85); font-size: 1.05rem; margin-bottom: 1.5rem; }
+.hero-desc { color: rgba(203,180,144,.85); font-size: .95rem; line-height: 1.75; max-width: 460px; margin-bottom: 2.5rem; }
+.hero-ctas { display: flex; gap: 1rem; flex-wrap: wrap; }
+
+.hero-image-col { position: relative; z-index: 1; }
+.hero-img-frame {
+  border-radius: 2px; overflow: hidden;
+  box-shadow: 0 40px 80px rgba(0,0,0,.5);
+  position: relative;
+}
+.hero-img-frame img { width: 100%; height: 430px; object-fit: cover; display: block; }
+.hero-epi-badge {
+  position: absolute; top: 1.5rem; left: -1.5rem;
+  background: white; padding: 1rem 1.5rem;
+  box-shadow: 0 8px 32px rgba(0,0,0,.2);
+  border-left: 3px solid var(--gold);
+}
+.hero-epi-badge .num { font-family: 'Playfair Display', serif; font-size: 1.8rem; font-weight: 800; color: var(--maroon); display: block; }
+.hero-epi-badge .label { font-size: .62rem; letter-spacing: .2em; text-transform: uppercase; color: var(--text-muted2); }
+.hero-verified-badge {
+  position: absolute; bottom: 1.5rem; right: -1rem;
+  background: var(--maroon); color: var(--gold-light);
+  padding: .75rem 1.25rem;
+  display: flex; align-items: center; gap: .5rem;
+  font-size: .72rem; font-weight: 700; letter-spacing: .15em; text-transform: uppercase;
+  box-shadow: 0 8px 24px rgba(0,0,0,.3);
+}
+
+.hero-stats {
+  grid-column: 1/-1;
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 1px; background: rgba(212,175,55,.2);
+  margin-top: -1rem;
+}
+.stat-cell {
+  background: rgba(58,10,19,.5);
+  padding: 1.25rem 1.5rem;
+  display: flex; align-items: center; gap: .75rem;
+}
+.stat-cell .stat-icon { color: var(--gold); font-size: 1.2rem; }
+.stat-cell .stat-text { font-size: .75rem; color: rgba(203,180,144,.85); line-height: 1.4; }
+.stat-cell .stat-text b { display: block; color: #f2e3c8; font-size: .82rem; }
+
+/* ── Section & Crafts ── */
+.section { padding: 5rem 4rem; }
+.section-title { font-family: 'Playfair Display', serif; font-size: 2.2rem; font-weight: 800; color: var(--maroon); margin-bottom: .5rem; }
+.section-bn { font-family: 'Noto Serif Bengali', serif; font-size: .92rem; color: var(--text-muted); margin-bottom: 2.5rem; }
+.section-eyebrow { font-size: .65rem; letter-spacing: .25em; text-transform: uppercase; color: var(--gold-mid); font-weight: 700; margin-bottom: .75rem; }
+
+.steps-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; }
+.step-card {
+  background: var(--cream-warm); border: 1px solid var(--border-gold);
+  border-radius: var(--radius); padding: 1.75rem;
+  position: relative; overflow: hidden;
+}
+.step-card::before {
+  content: attr(data-n);
+  position: absolute; top: 1rem; right: 1rem;
+  font-family: 'Playfair Display', serif; font-size: 3rem; font-weight: 900;
+  color: rgba(74,13,24,.06); line-height: 1;
+}
+.step-icon { font-size: 1.5rem; margin-bottom: 1rem; }
+.step-title { font-family: 'Playfair Display', serif; font-size: 1.05rem; font-weight: 700; color: var(--maroon); margin-bottom: .5rem; }
+.step-desc { font-size: .84rem; color: var(--text-mid); line-height: 1.6; }
+.step-desc .bn { font-family: 'Noto Serif Bengali', serif; display: block; margin-top: .35rem; font-size: .75rem; color: var(--text-muted2); }
+
+.crafts-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.25rem; margin-top: 2rem; }
+.craft-card {
+  border-radius: var(--radius); overflow: hidden; position: relative; cursor: pointer;
+  aspect-ratio: 3/4; box-shadow: 0 20px 40px rgba(74,13,24,.2);
+  transition: transform .3s ease;
+}
+.craft-card:hover { transform: translateY(-4px); }
+.craft-card img { width: 100%; height: 100%; object-fit: cover; transition: transform .5s; }
+.craft-card:hover img { transform: scale(1.08); }
+.craft-overlay {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: linear-gradient(to top, rgba(74,13,24,.95), transparent);
+  padding: 2rem 1.25rem 1.25rem;
+}
+.craft-name { font-family: 'Playfair Display', serif; font-size: 1rem; font-weight: 700; color: #f2e3c8; }
+.craft-bn { font-family: 'Noto Serif Bengali', serif; font-size: .72rem; color: var(--gold-light); opacity: .85; margin-bottom: .25rem; }
+.craft-desc { font-size: .72rem; color: rgba(203,180,144,.85); }
+
+/* ═══════════════════════════════════════
+   VERIFY PAGE & CAMERA CAPTURE
+═══════════════════════════════════════ */
+.verify-wrapper { max-width: 900px; margin: 0 auto; padding: 4rem 2rem; }
+.page-header { text-align: center; margin-bottom: 3rem; }
+.page-header h1 { font-size: 2.5rem; font-weight: 800; color: var(--maroon); margin-top: .75rem; }
+.page-header .bn { font-family: 'Noto Serif Bengali', serif; color: var(--text-muted); margin-top: .5rem; }
+.paisley-divider {
+  margin: 1.25rem auto 0;
+  width: 180px; height: 20px;
+  background: repeating-linear-gradient(90deg, var(--gold) 0, var(--gold) 2px, transparent 2px, transparent 8px);
+  opacity: .6; border-radius: 2px;
+}
+
+.verify-form { display: flex; gap: .75rem; max-width: 560px; margin: 0 auto 1rem; flex-wrap: wrap; }
+.qr-input-wrap { flex: 1; position: relative; min-width: 220px; }
+.qr-input-icon { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--gold-mid); }
+.qr-input { padding-left: 2.75rem !important; font-family: monospace; letter-spacing: .2em; font-size: .88rem; text-transform: uppercase; }
+
+.demo-chips { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: .5rem; margin-bottom: 2rem; font-size: .75rem; color: var(--text-muted); }
+.demo-chip {
+  border: 1px solid var(--border-gold); background: white;
+  padding: .3rem .9rem; border-radius: 999px;
+  font-family: monospace; font-size: .72rem; letter-spacing: .15em;
+  color: var(--maroon-light); cursor: pointer; transition: background .15s;
+}
+.demo-chip:hover { background: var(--cream-warm); }
+
+/* Camera Capture Box */
+.camera-section {
+  background: var(--maroon); border-radius: var(--radius);
+  padding: 2.25rem 2rem; text-align: center; margin-bottom: 2rem;
+  position: relative; overflow: hidden;
+  box-shadow: 0 20px 40px -15px rgba(74,13,24,.35);
+}
+.camera-section::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(ellipse at center, rgba(212,175,55,.12), transparent 70%);
+}
+.camera-title { font-family: 'Playfair Display', serif; font-size: 1.4rem; color: #f2e3c8; margin-bottom: .4rem; position: relative; }
+.camera-bn { font-family: 'Noto Serif Bengali', serif; font-size: .85rem; color: rgba(203,180,144,.85); margin-bottom: 1.5rem; position: relative; }
+.camera-btn-row { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; position: relative; }
+.capture-label {
+  display: inline-flex; align-items: center; gap: .6rem;
+  background: var(--gold); color: var(--maroon);
+  border-radius: var(--radius); padding: .85rem 1.6rem;
+  font-size: .74rem; font-weight: 700; letter-spacing: .2em; text-transform: uppercase;
+  cursor: pointer; transition: background .2s; border: none;
+}
+.capture-label:hover { background: var(--gold-mid); }
+#captureInput, #galleryInput { display: none; }
+
+.preview-strip { display: none; flex-wrap: wrap; gap: .65rem; justify-content: center; margin-top: 1.25rem; position: relative; }
+.preview-strip.show { display: flex; }
+.preview-thumb { width: 75px; height: 75px; object-fit: cover; border-radius: 3px; border: 2px solid var(--gold); }
+.preview-count { font-size: .78rem; color: var(--gold-light); margin-top: .6rem; font-weight: 600; }
+
+/* Certificate Card Area */
+.cert-area { margin-top: 2rem; }
+.cert-empty {
+  border: 1.5px dashed var(--border-gold); border-radius: var(--radius);
+  background: rgba(255,255,255,.7); padding: 3.5rem 2rem;
+  text-align: center; font-size: .92rem; color: var(--text-muted);
+}
+.cert-empty .bn { font-family: 'Noto Serif Bengali', serif; display: block; margin-top: .5rem; font-size: .85rem; }
+
+.cert-card {
+  border: 2px solid var(--border-gold); border-radius: var(--radius);
+  background: white; overflow: hidden;
+  box-shadow: 0 30px 60px rgba(74,13,24,.12);
+}
+.cert-header {
+  background: var(--maroon); padding: 1.75rem 2rem;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.cert-brand { font-family: 'Playfair Display', serif; color: var(--gold-light); font-size: 1.15rem; font-weight: 700; }
+.cert-status-badge {
+  padding: .4rem 1rem; border-radius: 999px;
+  font-size: .68rem; font-weight: 700; letter-spacing: .2em; text-transform: uppercase;
+}
+.cert-status-genuine { background: #15803d; color: white; }
+.cert-status-no_match { background: #b91c1c; color: white; }
+.cert-status-processing { background: var(--gold-mid); color: var(--maroon); }
+
+.cert-body { padding: 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+.cert-photo img { width: 100%; height: 210px; object-fit: cover; border-radius: 2px; }
+.cert-fields dl { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem 1.5rem; }
+.cert-fields dt { font-size: .65rem; letter-spacing: .18em; text-transform: uppercase; color: var(--text-muted2); font-weight: 700; }
+.cert-fields dd { font-size: .9rem; font-weight: 600; color: var(--maroon); }
+
+/* Recheck Panel */
+.recheck-panel {
+  margin-top: 2.5rem; border: 1px solid var(--border-gold);
+  border-radius: var(--radius); background: white; padding: 2rem;
+}
+.recheck-panel h3 { font-family: 'Playfair Display', serif; font-size: 1.25rem; color: var(--maroon); margin: .5rem 0; }
+.recheck-row { display: grid; grid-template-columns: 1fr auto; gap: .75rem; margin-top: 1rem; align-items: start; }
+.recheck-result { margin-top: 1rem; padding: .85rem 1.2rem; border-radius: var(--radius); font-size: .85rem; border: 1.5px solid; }
+.recheck-genuine { border-color: #86efac; background: #f0fdf4; color: #14532d; }
+.recheck-no_match { border-color: #fca5a5; background: #fef2f2; color: #7f1d1d; }
+
+/* ═══════════════════════════════════════
+   STUDIO (VOICE-TO-COMMERCE) STYLES
+═══════════════════════════════════════ */
+.studio-wrapper { max-width: 1140px; margin: 0 auto; padding: 3.5rem 1.5rem; }
+.studio-grid { display: grid; grid-template-columns: 1fr 1.35fr; gap: 2rem; align-items: start; }
+@media (max-width: 960px) { .studio-grid { grid-template-columns: 1fr; } }
+
+.maroon-recorder-card {
+  background: var(--maroon);
+  background-image: radial-gradient(ellipse at 30% 20%, rgba(212,175,55,.14) 0%, transparent 60%);
+  border-radius: var(--radius);
+  padding: 2rem 1.5rem;
+  color: #f2e3c8;
+  position: relative; overflow: hidden; text-align: center;
+  box-shadow: 0 20px 40px -15px rgba(74,13,24,.4);
+}
+.studio-mic-btn {
+  width: 96px; height: 96px; border-radius: 50%;
+  border: 2px solid var(--gold);
+  background: rgba(58,10,19,.75);
+  color: var(--gold-light);
+  display: inline-flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all .25s ease;
+  outline: none;
+}
+.studio-mic-btn:hover:not(:disabled) { background: #5e1220; transform: scale(1.05); }
+.studio-mic-btn:disabled { opacity: .4; cursor: not-allowed; }
+.studio-mic-btn.recording {
+  background: #8b263e; border-color: #fca5a5;
+  animation: studioPulse 1.6s infinite ease-out;
+}
+@keyframes studioPulse {
+  0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, .75); }
+  70% { box-shadow: 0 0 0 22px rgba(220, 38, 38, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+}
+.studio-saree-btn {
+  display: flex; align-items: center; gap: .85rem; width: 100%;
+  padding: .65rem .85rem; border-radius: var(--radius);
+  border: 1px solid rgba(212,175,55,.45); background: white;
+  text-align: left; cursor: pointer; transition: all .15s ease;
+}
+.studio-saree-btn:hover { background: #fff7ee; border-color: var(--gold-mid); }
+.studio-saree-btn.selected { border-color: var(--maroon-mid); background: #fff7ee; box-shadow: 0 0 0 2px var(--maroon-mid); }
+.studio-saree-thumb { width: 54px; height: 54px; border-radius: 3px; object-fit: cover; flex-shrink: 0; border: 1px solid var(--border-gold); }
+.studio-prompt-list {
+  list-style: none; padding: 0; margin: 1.5rem 0 0; text-align: left;
+  font-size: .8rem; color: #d8c5a4; display: flex; flex-direction: column; gap: .45rem;
+}
+.studio-prompt-list li { display: flex; align-items: center; gap: .5rem; }
+.studio-prompt-list .diamond { color: var(--gold); font-size: .75rem; }
+.studio-transcript-box {
+  background: #fffdf8; border: 1px solid var(--border-gold);
+  border-left: 4px solid var(--gold); border-radius: var(--radius);
+  padding: 1.25rem 1.5rem;
+}
+
+/* ═══════════════════════════════════════
+   CATALOGUE PAGE
+═══════════════════════════════════════ */
+.catalogue-wrapper { max-width: 1200px; margin: 0 auto; padding: 4rem 2rem; }
+.filter-bar { display: flex; flex-wrap: wrap; gap: .5rem; justify-content: center; margin: 2rem 0; }
+.filter-chip {
+  border: 1px solid var(--border-gold); background: white;
+  padding: .4rem 1rem; border-radius: 999px;
+  font-size: .74rem; font-weight: 600; cursor: pointer;
+  color: var(--maroon-light); transition: all .15s;
+}
+.filter-chip.active, .filter-chip:hover { background: var(--maroon); color: var(--gold-light); border-color: var(--maroon); }
+.catalogue-grid { display: grid; gap: 1.75rem; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+.cat-card {
+  border: 1px solid rgba(212,175,55,.4); border-radius: var(--radius);
+  background: white; overflow: hidden; cursor: pointer;
+  box-shadow: 0 20px 44px -26px rgba(74,13,24,.3);
+  transition: transform .3s, box-shadow .3s;
+}
+.cat-card:hover { transform: translateY(-5px); box-shadow: 0 32px 64px -24px rgba(74,13,24,.4); }
+.cat-card-img { position: relative; overflow: hidden; }
+.cat-card-img img { width: 100%; height: 240px; object-fit: cover; transition: transform .6s; }
+.cat-card:hover .cat-card-img img { transform: scale(1.08); }
+.cat-badge-verified {
+  position: absolute; top: .75rem; left: .75rem;
+  background: rgba(74,13,24,.9); color: var(--gold-light);
+  padding: .25rem .75rem; border-radius: 999px;
+  font-size: .64rem; font-weight: 700; letter-spacing: .15em; text-transform: uppercase;
+}
+.cat-card-body { padding: 1.25rem; }
+.cat-name { font-family: 'Playfair Display', serif; font-size: 1.05rem; font-weight: 700; color: var(--maroon); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cat-craft { font-family: 'Noto Serif Bengali', serif; font-size: .74rem; color: var(--gold-mid); margin-top: .15rem; }
+.cat-price { font-family: 'Playfair Display', serif; font-size: 1.15rem; font-weight: 700; color: var(--maroon-mid); }
+.cat-epi {
+  font-family: monospace; font-size: .68rem; letter-spacing: .1em;
+  border: 1px solid rgba(212,175,55,.5); background: var(--cream-warm);
+  padding: .2rem .5rem; border-radius: 2px; color: var(--text-muted);
+}
+
+/* Modals */
+.modal-backdrop {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(58,10,19,.88);
+  display: flex; align-items: center; justify-content: center; padding: 1rem;
+}
+.modal-backdrop.hidden { display: none; }
+.modal-box {
+  background: white; border-radius: var(--radius);
+  max-width: 800px; width: 100%; max-height: 88vh; overflow-y: auto;
+}
+.modal-grid { display: grid; grid-template-columns: 1fr 1fr; }
+.modal-grid img { width: 100%; height: 100%; min-height: 280px; object-fit: cover; }
+.modal-body { padding: 2rem; }
+
+/* ═══════════════════════════════════════
+   LOGIN & REGISTER
+═══════════════════════════════════════ */
+.login-wrapper {
+  min-height: calc(100vh - 120px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 3rem 1.5rem;
+  background: var(--cream-warm);
+}
+.login-card {
+  width: 100%; max-width: 440px;
+  background: white; border: 1px solid var(--border-gold);
+  border-radius: var(--radius); padding: 2.5rem;
+  box-shadow: 0 30px 60px -30px rgba(74,13,24,.4);
+}
+.form-group { margin-bottom: 1.25rem; }
+.form-label { font-size: .7rem; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: .4rem; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem; }
+
+/* ═══════════════════════════════════════
+   FOOTER & TOAST
+═══════════════════════════════════════ */
+footer {
+  background: var(--maroon); color: rgba(242,227,200,.7);
+  padding: 3rem 4rem 2rem; margin-top: 5rem;
+}
+.footer-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 2rem; flex-wrap: wrap; padding-bottom: 2rem; border-bottom: 1px solid rgba(212,175,55,.2); }
+.footer-brand { font-family: 'Playfair Display', serif; font-size: 1.4rem; font-weight: 700; color: var(--gold-light); }
+.footer-brand-bn { font-family: 'Noto Serif Bengali', serif; font-size: .8rem; color: rgba(242,227,200,.5); margin-top: .2rem; }
+.footer-tagline { font-size: .75rem; margin-top: .5rem; color: rgba(242,227,200,.55); }
+.footer-links { display: flex; gap: 2rem; flex-wrap: wrap; }
+.footer-link { color: rgba(242,227,200,.6); font-size: .8rem; text-decoration: none; cursor: pointer; background: none; border: none; transition: color .2s; }
+.footer-link:hover { color: var(--gold-light); }
+.footer-bottom { padding-top: 1.5rem; font-size: .72rem; color: rgba(242,227,200,.4); display: flex; justify-content: space-between; flex-wrap: wrap; gap: .5rem; }
+
+.loader { display: none; text-align: center; padding: 2.5rem; }
+.loader.show { display: block; }
+.spinner {
+  width: 48px; height: 48px; margin: 0 auto 1rem;
+  border: 3px solid rgba(212,175,55,.2);
+  border-top-color: var(--gold-mid);
+  border-radius: 50%; animation: spin 1s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.spinner-label { font-size: .75rem; letter-spacing: .2em; text-transform: uppercase; color: var(--text-muted2); }
+
+.toast {
+  position: fixed; bottom: 2rem; right: 2rem; z-index: 999;
+  background: var(--maroon); color: var(--gold-light);
+  padding: 1rem 1.5rem; border-radius: var(--radius);
+  font-size: .85rem; max-width: 340px;
+  box-shadow: 0 8px 32px rgba(0,0,0,.3);
+  transform: translateY(150%); transition: transform .3s ease;
+  display: flex; align-items: center; gap: .75rem;
+}
+.toast.show { transform: translateY(0); }
+
+@media(max-width: 900px) {
+  .hero { grid-template-columns: 1fr; padding: 3rem 1.5rem; gap: 2rem; }
+  .hero-stats { grid-template-columns: repeat(2, 1fr); }
+  .hero-image-col { order: -1; }
+  .hero-epi-badge { left: .5rem; }
+  .steps-grid { grid-template-columns: repeat(2, 1fr); }
+  .crafts-grid { grid-template-columns: repeat(2, 1fr); }
+  .section { padding: 3rem 1.5rem; }
+  .modal-grid { grid-template-columns: 1fr; }
+  #navbar { padding: .75rem 1.25rem; }
+}
+@media(max-width: 600px) {
+  .hero-stats { grid-template-columns: 1fr; }
+  .steps-grid { grid-template-columns: 1fr; }
+  .crafts-grid { grid-template-columns: 1fr; }
+  .cert-body { grid-template-columns: 1fr; }
+  .form-row { grid-template-columns: 1fr; }
+  .recheck-row { grid-template-columns: 1fr; }
+  .nav-links .nav-link:not(.nav-btn) { display: none; }
+  .footer-links { flex-direction: column; gap: .75rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- ══════ NAVBAR ══════ -->
+<nav id="navbar">
+  <a class="nav-brand" href="#" onclick="showPage('home');return false">
+    <div class="nav-brand-icon">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="10" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+    </div>
+    <div>
+      <div class="nav-brand-name">TantSaakshi</div>
+      <span class="nav-brand-sub">তাঁতসাক্ষী · সুতোর সাক্ষী</span>
+    </div>
+  </a>
+  <div class="nav-links">
+    <button class="nav-link" id="nav-verify" onclick="showPage('verify')">
+      Verify <span class="bn">যাচাই</span>
+    </button>
+    <button class="nav-link" id="nav-catalogue" onclick="showPage('catalogue')">
+      Collection <span class="bn">সংগ্রহ</span>
+    </button>
+    <button class="nav-link" id="nav-studio" onclick="showPage('studio')">
+      Studio <span class="bn">স্টুডিও</span>
+    </button>
+    <button id="nav-login-btn" class="btn-luxe nav-btn" onclick="showPage('login')" style="font-size:.68rem;padding:.6rem 1.2rem">
+      Weaver Login <span style="font-family:'Noto Serif Bengali',serif;font-weight:400;font-size:.75rem;text-transform:none;letter-spacing:0">প্রবেশ</span>
+    </button>
+    <button id="nav-user-btn" class="btn-ghost nav-btn" onclick="logout()" style="display:none;font-size:.68rem;padding:.6rem 1.2rem">
+      Sign Out
+    </button>
+  </div>
+</nav>
+
+<!-- Gold decorative strip -->
+<div class="gold-strip"></div>
+
+<!-- ══════ PAGES ══════ -->
+
+<!-- ─────── 1. HOME ─────── -->
+<div id="page-home" class="page active">
+  <section class="hero">
+    <div class="hero-content">
+      <div class="hero-eyebrow">Bengal Handloom <span class="bn">· বাংলার তাঁত</span></div>
+      <h1 class="hero-title">Every thread<br><em>bears witness.</em></h1>
+      <p class="hero-bn">প্রতিটি সুতো সাক্ষী দেয়।</p>
+      <p class="hero-desc">TantSaakshi is the loom-side trust layer for Bengal handloom — thread density measured by 2D-FFT physics at the cooperative, sealed as a digital birth certificate, and sold in the weaver's own voice.</p>
+      <div class="hero-ctas">
+        <button class="btn-gold" onclick="showPage('verify')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z"/></svg>
+          VERIFY A SAREE <span style="font-family:'Noto Serif Bengali',serif;font-weight:400;text-transform:none;letter-spacing:0;font-size:.8rem">যাচাই করুন</span>
+        </button>
+        <button class="btn-ghost" style="color:#f2e3c8;border-color:rgba(242,227,200,.4)" onclick="showPage('catalogue')">
+          THE COLLECTION <span style="font-family:'Noto Serif Bengali',serif;font-weight:400;text-transform:none;letter-spacing:0;font-size:.8rem">সংগ্রহ</span>
+        </button>
+      </div>
+    </div>
+    <div class="hero-image-col">
+      <div class="hero-img-frame">
+        <img src="https://images.unsplash.com/photo-1569909115134-a0426936c879?crop=entropy&cs=srgb&fm=jpg&q=85&w=800" alt="Weaver at the loom"/>
+        <div class="hero-epi-badge">
+          <span class="num" id="heroEpi">EPI 60.0</span>
+          <span class="label">Ends / Inch · FFT-Measured</span>
+        </div>
+        <div class="hero-verified-badge">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+          Weave Verified
+        </div>
+      </div>
+    </div>
+    <div class="hero-stats">
+      <div class="stat-cell">
+        <span class="stat-icon">🛡</span>
+        <div class="stat-text"><b>Verified Quality</b>with Thread Count</div>
+      </div>
+      <div class="stat-cell">
+        <span class="stat-icon">📊</span>
+        <div class="stat-text"><b>Smart Analysis</b>&amp; Insights</div>
+      </div>
+      <div class="stat-cell">
+        <span class="stat-icon">🧵</span>
+        <div class="stat-text"><b>Authentic Handloom</b>&amp; Heritage</div>
+      </div>
+      <div class="stat-cell">
+        <span class="stat-icon">📜</span>
+        <div class="stat-text"><b>Digital Certificate</b>Tamper-proof</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Process -->
+  <section class="section weave-bg">
+    <div class="section-eyebrow">The process</div>
+    <h2 class="section-title">How the loom speaks truth</h2>
+    <p class="section-bn">কীভাবে তাঁত সত্য বলে</p>
+    <div class="steps-grid">
+      <div class="step-card" data-n="1">
+        <div class="step-icon">📷</div>
+        <div class="step-title">Optical registration</div>
+        <div class="step-desc">The optical jig fixes distance, light and angle — every saree photographed the same honest way.<span class="bn">আলোক নিবন্ধন — সমান দূরত্বে, সমান আলোয়।</span></div>
+      </div>
+      <div class="step-card" data-n="2">
+        <div class="step-icon">🔬</div>
+        <div class="step-title">2D-FFT analysis</div>
+        <div class="step-desc">2D FFT turns the weave into a spectrum; peaks become ends and picks per inch. No guessing, no promises.<span class="bn">FFT বিশ্লেষণে সুতো গণনা — নিখুঁত, নির্ভরযোগ্য।</span></div>
+      </div>
+      <div class="step-card" data-n="3">
+        <div class="step-icon">🏷</div>
+        <div class="step-title">Sealed to gold QR</div>
+        <div class="step-desc">EPI/PPI, grade and micro-texture fingerprint are sealed to the gold QR tag — tamper-proof by design.<span class="bn">QR ট্যাগে সিলমোহর — জালিয়াতি অসম্ভব।</span></div>
+      </div>
+      <div class="step-card" data-n="4">
+        <div class="step-icon">🗣</div>
+        <div class="step-title">Weaver's voice</div>
+        <div class="step-desc">One scan on the saraya shows the weave, the cooperative, and the weaver's own voice-told story.<span class="bn">এক স্ক্যানে শাড়ির পরিচয় ও তাঁতির গল্প।</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Crafts -->
+  <section class="section">
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:1rem">
+      <div>
+        <div class="section-eyebrow">Living crafts</div>
+        <h2 class="section-title">Each weave, a district's signature</h2>
+        <p class="section-bn">প্রতিটি বুনন এক জেলার স্বাক্ষর</p>
+      </div>
+      <button class="btn-ghost" onclick="showPage('catalogue')">View All</button>
+    </div>
+    <div class="crafts-grid">
+      <div class="craft-card" onclick="showPage('catalogue')">
+        <img src="https://images.unsplash.com/photo-1569909115134-a0426936c879?crop=entropy&cs=srgb&fm=jpg&q=80&w=600" alt="Dhaniakhali Tant"/>
+        <div class="craft-overlay">
+          <div class="craft-bn">ধনিয়াখালি তাঁত</div>
+          <div class="craft-name">Dhaniakhali Tant</div>
+          <div class="craft-desc">Crisp cotton, candy borders</div>
+        </div>
+      </div>
+      <div class="craft-card" onclick="showPage('catalogue')">
+        <img src="https://images.unsplash.com/photo-1638310533874-6c124c012e1d?crop=entropy&cs=srgb&fm=jpg&q=80&w=600" alt="Santipur Jamdani"/>
+        <div class="craft-overlay">
+          <div class="craft-bn">শান্তিপুর জামদানি</div>
+          <div class="craft-name">Santipur Jamdani</div>
+          <div class="craft-desc">Floating buti, breathable muslin</div>
+        </div>
+      </div>
+      <div class="craft-card" onclick="showPage('catalogue')">
+        <img src="https://images.pexels.com/photos/14953193/pexels-photo-14953193.jpeg?auto=compress&cs=tinysrgb&h=600&w=600" alt="Bishnupur Baluchari"/>
+        <div class="craft-overlay">
+          <div class="craft-bn">বিষ্ণুপুর বালুচরী</div>
+          <div class="craft-name">Bishnupur Baluchari</div>
+          <div class="craft-desc">Mythological pallu scenes</div>
+        </div>
+      </div>
+      <div class="craft-card" onclick="showPage('catalogue')">
+        <img src="https://images.unsplash.com/photo-1588140686379-1b76a52103dc?crop=entropy&cs=srgb&fm=jpg&q=80&w=600" alt="Bolpur Kantha"/>
+        <div class="craft-overlay">
+          <div class="craft-bn">বোলপুর কাঁথা</div>
+          <div class="craft-name">Bolpur Kantha</div>
+          <div class="craft-desc">Thousand-stitch embroidery</div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ─────── 2. VERIFY & CAMERA CAPTURE ─────── -->
+<div id="page-verify" class="page">
+  <div class="verify-wrapper">
+    <div class="page-header">
+      <div class="eyebrow" style="color:var(--gold-mid)">Buyer's inspector</div>
+      <h1>Inspect the weave</h1>
+      <p class="bn">বুনন যাচাই করুন — ট্যাগের আইডি লিখুন বা স্ক্যান করুন</p>
+      <div class="paisley-divider"></div>
+    </div>
+
+    <form class="verify-form" onsubmit="inspectSaree(event)">
+      <div class="qr-input-wrap">
+        <span class="qr-input-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z"/></svg>
+        </span>
+        <input id="qrInput" class="qr-input" placeholder="Enter tag ID — TS-XXXXXX" oninput="this.value=this.value.toUpperCase()"/>
+      </div>
+      <button type="submit" class="btn-luxe">
+        <span id="inspectBtnLabel">Inspect</span>
+      </button>
+    </form>
+
+    <div class="demo-chips">
+      <span style="text-transform:uppercase;letter-spacing:.2em">Try live:</span>
+      <button class="demo-chip" onclick="useDemoId('TS-HXW92XBU')">TS-HXW92XBU</button>
+      <button class="demo-chip" onclick="useDemoId('TS-BBT6J45C')">TS-BBT6J45C</button>
+    </div>
+
+    <!-- 📸 CAMERA CAPTURE SECTION -->
+    <div class="camera-section">
+      <h3 class="camera-title">📸 Capture saree image</h3>
+      <p class="camera-bn">সরাসরি ক্যামেরায় তুলুন বা গ্যালারি থেকে বেছে নিন</p>
+      <div class="camera-btn-row">
+        <label for="captureInput" class="capture-label">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M9 2h6l2 2h3a2 2 0 012 2v13a2 2 0 01-2 2H4a2 2 0 01-2-2V6a2 2 0 012-2h3z"/></svg>
+          Capture Photo <span style="font-family:'Noto Serif Bengali',serif;font-weight:400;text-transform:none;letter-spacing:0;font-size:.8rem">তোলা</span>
+        </label>
+        <input type="file" id="captureInput" accept="image/*" capture="environment" multiple onchange="onPhotosSelected(this)"/>
+
+        <label for="galleryInput" class="capture-label" style="background:rgba(212,175,55,.18);color:#f2e3c8;border:1.5px solid rgba(212,175,55,.4)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+          From Gallery <span style="font-family:'Noto Serif Bengali',serif;font-weight:400;text-transform:none;letter-spacing:0;font-size:.8rem">গ্যালারি</span>
+        </label>
+        <input type="file" id="galleryInput" accept="image/*" multiple onchange="onPhotosSelected(this)"/>
+      </div>
+
+      <div id="previewStrip" class="preview-strip"></div>
+      <p id="photoCountLabel" class="preview-count" style="display:none"></p>
+      <button id="clearPhotosBtn" onclick="clearPhotos()" style="display:none;margin-top:.75rem;background:transparent;border:1px solid rgba(212,175,55,.4);color:rgba(242,227,200,.7);padding:.35rem .9rem;border-radius:999px;font-size:.7rem;cursor:pointer">
+        Clear photos
+      </button>
+    </div>
+
+    <div id="verifyLoader" class="loader">
+      <div class="spinner"></div>
+      <div class="spinner-label">Consulting the loom…</div>
+    </div>
+
+    <div id="certArea" class="cert-area">
+      <div class="cert-empty">
+        Every genuine TantSaakshi saree wears a gold QR tag. Enter its ID — or capture the fabric — and its digital birth certificate opens right here.
+        <span class="bn">প্রতিটি বৈধ শাড়িতে সোনালি QR ট্যাগ থাকে। স্ক্যান করলেই জন্ম সনদ খুলে যায়।</span>
+      </div>
+    </div>
+
+    <div id="recheckPanel" class="recheck-panel" style="display:none">
+      <div class="eyebrow" style="color:var(--gold-mid)">Seller &amp; staff tool</div>
+      <h3>Fabric re-check</h3>
+      <p style="font-family:'Noto Serif Bengali',serif;font-size:.8rem;color:var(--text-muted)">কাপড়ের পুনঃযাচাই — নতুন ছবিতে ফিঙ্গারপ্রিন্ট মেলান</p>
+      <div class="recheck-row">
+        <input id="recheckQr" placeholder="QR ID e.g. TS-XXXXXX" style="font-family:monospace;letter-spacing:.2em;font-size:.88rem"/>
+        <button class="btn-luxe" onclick="doRecheck()" id="recheckBtn">Check authenticity</button>
+      </div>
+      <div id="recheckResult"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ─────── 3. VOICE STUDIO ─────── -->
+<div id="page-studio" class="page">
+  <div class="studio-wrapper">
+    <div class="page-header">
+      <div class="eyebrow" style="color:var(--gold-mid)">Voice-to-commerce studio</div>
+      <h1>Let the loom speak Bengali</h1>
+      <p class="bn">কোনো টাইপিং নেই — শুধু বাংলায় বলুন, বাকিটা AI করবে</p>
+      <div class="paisley-divider"></div>
+    </div>
+
+    <div id="studioGuard" style="display:none;min-height:45vh;text-align:center;padding:3rem 1.5rem" class="cert-empty">
+      <div style="font-size:3rem;margin-bottom:.5rem">🏵</div>
+      <h2 style="font-family:'Playfair Display',serif;font-size:1.75rem;font-weight:700;color:var(--maroon)">The voice studio is for cooperative staff</h2>
+      <p style="font-family:'Noto Serif Bengali',serif;font-size:.9rem;color:var(--text-muted);margin:.5rem 0 1.5rem">ভয়েস স্টুডিও শুধু সমবায় কর্মীদের জন্য</p>
+      <button onclick="showPage('login')" class="btn-luxe">Weaver login <span style="font-family:'Noto Serif Bengali',serif;text-transform:none;letter-spacing:0">· প্রবেশ</span></button>
+    </div>
+
+    <div id="studioContent">
+      <div class="studio-grid">
+        
+        <!-- Left: Picker & Voice Recorder -->
+        <div style="display:flex;flex-direction:column;gap:1.5rem">
+          <section class="paper-grain" style="background:white;border:1px solid var(--border-gold);border-radius:var(--radius);padding:1.5rem">
+            <h3 style="font-family:'Playfair Display',serif;font-size:1.15rem;font-weight:700;color:var(--maroon)">1 · Choose a verified weave</h3>
+            <p style="font-family:'Noto Serif Bengali',serif;font-size:.78rem;color:var(--gold-mid)">যাচাইকৃত শাড়ি বাছুন</p>
+            
+            <div id="studioSareeLoader" class="loader" style="padding:1rem;display:none">
+              <div class="spinner" style="width:36px;height:36px"></div>
+            </div>
+
+            <div id="studioUnlistedList" style="margin-top:1rem;display:flex;flex-direction:column;gap:.65rem"></div>
+
+            <p id="studioNoneUnlisted" style="display:none;font-size:.8rem;color:var(--text-muted);margin-top:.75rem">
+              Every verified weave already has its story. Register a new saree at the loom desk first.
+              <span style="font-family:'Noto Serif Bengali',serif;display:block;margin-top:.2rem">সব শাড়ির গল্প প্রকাশিত — আগে নতুন শাড়ি নিবন্ধন করুন।</span>
+            </p>
+
+            <div style="margin-top:1rem;border-top:1px dashed var(--border-gold);padding-top:.85rem">
+              <label class="form-label" style="font-size:.65rem">Or enter a verified QR ID manually</label>
+              <input id="studioQrManual" placeholder="TS-XXXXXX" oninput="this.value=this.value.toUpperCase();onStudioManualQr(this.value)" style="font-family:monospace;letter-spacing:.2em;text-transform:uppercase"/>
+            </div>
+          </section>
+
+          <section class="maroon-recorder-card paper-grain">
+            <h3 style="font-family:'Playfair Display',serif;font-size:1.25rem;font-weight:700">2 · Speak the saree's story</h3>
+            <p style="font-family:'Noto Serif Bengali',serif;font-size:.78rem;color:#cbb490;margin-top:.25rem">বাংলায় বলুন — নাম, কারুকাজ, রং, আঁচল, দাম, গল্প</p>
+            
+            <div style="margin-top:1.75rem">
+              <button id="studioMicBtn" class="studio-mic-btn" onclick="toggleStudioRecording()" disabled>
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                  <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                  <line x1="12" y1="19" x2="12" y2="23"/>
+                  <line x1="8" y1="23" x2="16" y2="23"/>
+                </svg>
+              </button>
+            </div>
+
+            <p id="studioTimer" style="margin-top:1rem;font-family:monospace;font-size:1.35rem;color:var(--gold-light);font-weight:700;letter-spacing:.1em">00:00</p>
+            <p id="studioRecordState" style="font-size:.72rem;letter-spacing:.2em;text-transform:uppercase;color:#cbb490;margin-top:.2rem">Choose a weave first</p>
+
+            <div id="studioAudioWrap" style="display:none;margin-top:1.25rem">
+              <audio id="studioAudioPlayback" controls style="width:100%;max-width:280px;height:40px;margin:0 auto"></audio>
+              <div style="margin-top:1rem">
+                <button id="studioTranscribeBtn" class="btn-gold" onclick="transcribeStudioVoice()">
+                  <span id="studioTranscribeLabel">AI, write my listing</span>
+                  <span style="font-family:'Noto Serif Bengali',serif;font-weight:400;text-transform:none;letter-spacing:0;font-size:.8rem;opacity:.8">· AI লিখুক</span>
+                </button>
+              </div>
+            </div>
+
+            <ul class="studio-prompt-list">
+              <li><span class="diamond">❖</span> The saree's name <span style="font-family:'Noto Serif Bengali',serif;color:#a98f68">· শাড়ির নাম</span></li>
+              <li><span class="diamond">❖</span> The craft &amp; your district <span style="font-family:'Noto Serif Bengali',serif;color:#a98f68">· কারুকাজ ও জেলা</span></li>
+              <li><span class="diamond">❖</span> Colour, motif, the aanchal <span style="font-family:'Noto Serif Bengali',serif;color:#a98f68">· রং, বুটি, আঁচল</span></li>
+              <li><span class="diamond">❖</span> The occasion it was woven for <span style="font-family:'Noto Serif Bengali',serif;color:#a98f68">· কোন উপলক্ষে বোনা</span></li>
+              <li><span class="diamond">❖</span> Its price, if you wish <span style="font-family:'Noto Serif Bengali',serif;color:#a98f68">· চাইলে দাম</span></li>
+            </ul>
+          </section>
+        </div>
+
+        <!-- Right: Fields, Publish & Share -->
+        <div style="display:flex;flex-direction:column;gap:1.5rem">
+          <div id="studioError" style="display:none;background:#fef2f2;border:1.5px solid #fca5a5;color:#7f1d1d;padding:.85rem 1.25rem;border-radius:var(--radius);font-size:.85rem"></div>
+
+          <div id="studioTranscriptBox" class="studio-transcript-box" style="display:none">
+            <div class="eyebrow" style="color:var(--gold-mid)">The weaver said · <span style="font-family:'Noto Serif Bengali',serif;text-transform:none;letter-spacing:0">তাঁতি বললেন</span></div>
+            <p id="studioTranscriptText" style="font-family:'Noto Serif Bengali',serif;color:var(--maroon);font-size:.95rem;line-height:1.75;margin-top:.5rem"></p>
+          </div>
+
+          <section id="studioFieldsCard" class="paper-grain" style="display:none;background:white;border:1px solid var(--border-gold);border-radius:var(--radius);padding:1.75rem">
+            <h3 style="font-family:'Playfair Display',serif;font-size:1.25rem;font-weight:700;color:var(--maroon)">3 · Touch the listing (optional)</h3>
+            <p style="font-family:'Noto Serif Bengali',serif;font-size:.78rem;color:var(--gold-mid)">ইচ্ছে হলে বদলান — না হলে সরাসরি প্রকাশ করুন</p>
+            
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:.85rem;margin-top:1.25rem">
+              <div>
+                <label class="form-label">Title (English)</label>
+                <input id="field_title_en" placeholder="Handloom Tant Saree"/>
+              </div>
+              <div>
+                <label class="form-label">নাম (বাংলা)</label>
+                <input id="field_title_bn" style="font-family:'Noto Serif Bengali',serif" placeholder="খাঁটি তাঁত শাড়ি"/>
+              </div>
+              <div>
+                <label class="form-label">Colour · রং</label>
+                <input id="field_colour" placeholder="Red & Gold"/>
+              </div>
+              <div>
+                <label class="form-label">Motif · বুটি</label>
+                <input id="field_motif" placeholder="Paisley / Floral"/>
+              </div>
+              <div>
+                <label class="form-label">Occasion · উপলক্ষ</label>
+                <input id="field_occasion" placeholder="Festive wear"/>
+              </div>
+              <div>
+                <label class="form-label">Price ₹ · দাম</label>
+                <input id="field_price_inr" type="number" placeholder="3500"/>
+              </div>
+            </div>
+
+            <div style="margin-top:1rem">
+              <label class="form-label">The weaver's story · <span style="font-family:'Noto Serif Bengali',serif;text-transform:none;letter-spacing:0">গল্প (বাংলা)</span></label>
+              <textarea id="field_story_bn" rows="3" style="font-family:'Noto Serif Bengali',serif"></textarea>
+            </div>
+
+            <div style="margin-top:.75rem">
+              <label class="form-label">Story (English)</label>
+              <textarea id="field_story_en" rows="3"></textarea>
+            </div>
+
+            <button id="studioPublishBtn" class="btn-luxe" onclick="publishStudioListing()" style="width:100%;justify-content:center;margin-top:1.25rem;padding:1rem">
+              <span id="studioPublishLabel">Publish to the world</span>
+              <span style="font-family:'Noto Serif Bengali',serif;font-weight:400;text-transform:none;letter-spacing:0;font-size:.85rem;opacity:.8">· প্রকাশ করুন</span>
+            </button>
+          </section>
+
+          <section id="studioShareCard" style="display:none;background:white;border:2px solid var(--gold);border-radius:var(--radius);padding:1.75rem">
+            <div style="display:flex;align-items:center;gap:1rem">
+              <div style="font-size:2.2rem">🏵</div>
+              <div>
+                <h3 style="font-family:'Playfair Display',serif;font-size:1.35rem;font-weight:700;color:var(--maroon)">The weave is live</h3>
+                <p style="font-family:'Noto Serif Bengali',serif;font-size:.78rem;color:var(--gold-mid)">তালিকা প্রকাশিত — এখন ছড়িয়ে দিন</p>
+              </div>
+            </div>
+
+            <div style="margin-top:1.5rem">
+              <label class="form-label">Buyer's WhatsApp number · <span style="font-family:'Noto Serif Bengali',serif;text-transform:none;letter-spacing:0">ক্রেতার নম্বর</span></label>
+              <div style="display:flex;gap:.6rem;margin-top:.35rem">
+                <input id="studioSharePhone" placeholder="9876543210" style="font-family:monospace;letter-spacing:.1em"/>
+                <button class="btn-gold" onclick="shareStudioWhatsApp()" id="studioShareBtn" style="white-space:nowrap">
+                  Send on WhatsApp
+                </button>
+              </div>
+              <div id="studioShareSent" style="display:none;color:#15803d;font-size:.8rem;margin-top:.5rem;font-weight:600">✓ Delivered to buyer with certificate link</div>
+            </div>
+
+            <div style="display:flex;flex-wrap:wrap;gap:.6rem;margin-top:1.5rem;border-top:1px dashed var(--border-gold);padding-top:1rem">
+              <button class="btn-ghost" onclick="loadStudioOndc()" style="font-size:.68rem;padding:.5rem 1rem">ONDC payload</button>
+              <a id="studioCertLink" href="#" target="_blank" class="btn-ghost" style="font-size:.68rem;padding:.5rem 1rem;text-decoration:none">View certificate</a>
+              <button class="btn-luxe" onclick="resetStudio()" style="font-size:.68rem;padding:.5rem 1rem">New listing</button>
+            </div>
+          </section>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="studioOndcModal" class="modal-backdrop hidden" onclick="closeStudioOndc()">
+  <div class="modal-box" onclick="event.stopPropagation()" style="background:#2c1810;color:#f2e3c8;max-width:680px;padding:1.5rem">
+    <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(212,175,55,.3);padding-bottom:.75rem">
+      <div class="eyebrow" style="color:var(--gold-light)">ONDC-ready catalogue item</div>
+      <div style="display:flex;gap:.75rem">
+        <button onclick="copyStudioOndc()" class="btn-gold" style="font-size:.65rem;padding:.35rem .75rem">Copy</button>
+        <button onclick="closeStudioOndc()" class="btn-ghost" style="color:#f2e3c8;border-color:rgba(212,175,55,.4);font-size:.65rem;padding:.35rem .75rem">Close</button>
+      </div>
+    </div>
+    <pre id="studioOndcCode" style="margin-top:1rem;max-height:60vh;overflow-y:auto;font-family:monospace;font-size:.75rem;line-height:1.6;color:#e9d38a;white-space:pre-wrap"></pre>
+  </div>
+</div>
+
+<!-- ─────── 4. CATALOGUE ─────── -->
+<div id="page-catalogue" class="page">
+  <div class="catalogue-wrapper">
+    <div class="page-header">
+      <div class="eyebrow" style="color:var(--gold-mid)">Verified collection</div>
+      <h1>Masterworks with a witness</h1>
+      <p style="font-family:'Noto Serif Bengali',serif;color:var(--text-muted);margin-top:.5rem">যাচাইকৃত সংগ্রহ — প্রতিটি শাড়ির জন্ম সনদ আছে</p>
+      <div class="paisley-divider"></div>
+    </div>
+    <div id="filterBar" class="filter-bar"></div>
+    <div id="catalogueLoader" class="loader" style="display:none"><div class="spinner"></div><div class="spinner-label">Unfolding the collection…</div></div>
+    <div id="catalogueGrid" class="catalogue-grid"></div>
+    <div id="catalogueEmpty" style="display:none" class="cert-empty">
+      No verified sarees in this craft yet — the looms are still at work.
+      <span class="bn">এই কারুকাজে এখনও কোনো যাচাইকৃত শাড়ি নেই।</span>
+    </div>
+  </div>
+</div>
+
+<div id="detailModal" class="modal-backdrop hidden" onclick="closeModal()">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div class="modal-grid" id="modalGrid"></div>
+  </div>
+</div>
+
+<!-- ─────── 5. LOGIN ─────── -->
+<div id="page-login" class="page">
+  <div class="login-wrapper">
+    <div class="login-card paper-grain">
+      <div style="text-align:center;margin-bottom:2rem">
+        <div class="eyebrow" style="color:var(--gold-mid)">Loom-side access</div>
+        <h2 style="font-family:'Playfair Display',serif;font-size:1.8rem;color:var(--maroon);margin:.5rem 0">Weaver &amp; Co-op Login</h2>
+        <p style="font-family:'Noto Serif Bengali',serif;font-size:.85rem;color:var(--text-muted)">সমবায় কর্মী ও বিক্রেতার প্রবেশ</p>
+        <div class="paisley-divider" style="margin:1rem auto 0"></div>
+      </div>
+      <div id="loginError" style="display:none;background:#fef2f2;border:1.5px solid #fca5a5;padding:.75rem 1rem;border-radius:var(--radius);font-size:.82rem;color:#7f1d1d;margin-bottom:1rem"></div>
+      <form onsubmit="doLogin(event)">
+        <div class="form-group">
+          <label class="form-label">Phone <span style="font-family:'Noto Serif Bengali',serif;text-transform:none;letter-spacing:0">· ফোন</span></label>
+          <input id="loginPhone" type="tel" placeholder="9876543210" required/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Secret PIN <span style="font-family:'Noto Serif Bengali',serif;text-transform:none;letter-spacing:0">· গোপন পিন</span></label>
+          <input id="loginPin" type="password" placeholder="••••••" required style="letter-spacing:.4em;font-size:1.2rem"/>
+        </div>
+        <button type="submit" class="btn-luxe" id="loginBtn" style="width:100%;justify-content:center;padding:1rem">
+          Enter <span style="font-family:'Noto Serif Bengali',serif;font-weight:400;text-transform:none;letter-spacing:0;font-size:.85rem">· প্রবেশ</span>
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ─────── 6. REGISTER (LOOM DESK) ─────── -->
+<div id="page-register" class="page">
+  <div class="verify-wrapper">
+    <div class="page-header">
+      <div class="eyebrow" style="color:var(--gold-mid)">Loom desk</div>
+      <h1>Register a saree</h1>
+      <p style="font-family:'Noto Serif Bengali',serif;color:var(--text-muted);margin-top:.5rem">শাড়ি নিবন্ধন করুন</p>
+      <div class="paisley-divider"></div>
+    </div>
+
+    <div id="registerGuard" style="display:none" class="cert-empty">
+      This area is for cooperative staff only. <a href="#" onclick="showPage('login');return false" style="color:var(--maroon);font-weight:700">Please log in.</a>
+    </div>
+
+    <div id="registerContent" style="display:flex;flex-direction:column;gap:1.5rem">
+      <div class="paper-grain" style="background:white;border:1px solid var(--border-gold);border-radius:var(--radius);padding:1.75rem">
+        <h3 style="font-family:'Playfair Display',serif;font-size:1.15rem;color:var(--maroon)">1 · Generate QR tags</h3>
+        <p style="font-family:'Noto Serif Bengali',serif;font-size:.78rem;color:var(--gold-mid)">QR ট্যাগ তৈরি করুন</p>
+        <div class="form-row" style="align-items:flex-end">
+          <div>
+            <label class="form-label">Number of tags</label>
+            <input id="tagCount" type="number" min="1" max="200" value="10" style="font-family:monospace"/>
+          </div>
+          <button class="btn-luxe" onclick="generateTags()">Generate Tags</button>
+        </div>
+        <div id="tagResult" style="margin-top:1rem;font-size:.85rem"></div>
+      </div>
+
+      <div class="paper-grain" style="background:white;border:1px solid var(--border-gold);border-radius:var(--radius);padding:1.75rem">
+        <h3 style="font-family:'Playfair Display',serif;font-size:1.15rem;color:var(--maroon)">2 · Choose weaver &amp; saree type</h3>
+        <p style="font-family:'Noto Serif Bengali',serif;font-size:.78rem;color:var(--gold-mid)">তাঁতি ও শাড়ির ধরন বাছুন</p>
+        <div class="form-row">
+          <div>
+            <label class="form-label">Weaver</label>
+            <select id="weaverSelect"><option value="">Loading weavers…</option></select>
+          </div>
+          <div>
+            <label class="form-label">Saree type</label>
+            <select id="sareeType">
+              <option value="Tant">Tant</option>
+              <option value="Jamdani">Jamdani</option>
+              <option value="Baluchari">Baluchari</option>
+              <option value="Kantha">Kantha</option>
+              <option value="Muslin">Muslin</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn-luxe" style="margin-top:1rem" onclick="createBatch()">Create Batch</button>
+        <div id="batchResult" style="margin-top:1rem;font-size:.85rem"></div>
+      </div>
+
+      <div class="paper-grain" style="background:white;border:1px solid var(--border-gold);border-radius:var(--radius);padding:1.75rem">
+        <h3 style="font-family:'Playfair Display',serif;font-size:1.15rem;color:var(--maroon)">3 · Register saree with photos</h3>
+        <p style="font-family:'Noto Serif Bengali',serif;font-size:.78rem;color:var(--gold-mid)">ছবি তুলে শাড়ি নিবন্ধন করুন</p>
+        <div class="form-row">
+          <div>
+            <label class="form-label">QR tag ID</label>
+            <input id="regQrId" placeholder="TS-XXXXXX" style="font-family:monospace;letter-spacing:.2em" oninput="this.value=this.value.toUpperCase()"/>
+          </div>
+          <div>
+            <label class="form-label">Batch ID</label>
+            <input id="regBatchId" placeholder="Batch ID from step 2" style="font-family:monospace"/>
+          </div>
+        </div>
+        <div style="margin-top:1rem">
+          <label class="form-label">Capture saree fabric photos</label>
+          <div style="display:flex;gap:.75rem;margin-top:.5rem;flex-wrap:wrap">
+            <label for="regCapture" class="capture-label">Camera</label>
+            <input type="file" id="regCapture" accept="image/*" capture="environment" multiple style="display:none" onchange="onRegPhotos(this)"/>
+            <label for="regGallery" class="capture-label" style="background:var(--gold);color:var(--maroon)">Gallery</label>
+            <input type="file" id="regGallery" accept="image/*" multiple style="display:none" onchange="onRegPhotos(this)"/>
+          </div>
+          <div id="regPhotoPreview" class="preview-strip" style="margin-top:.75rem"></div>
+          <p id="regPhotoCount" style="font-size:.75rem;color:var(--text-muted);margin-top:.35rem"></p>
+        </div>
+        <button class="btn-luxe" style="margin-top:1rem" onclick="registerSaree()" id="regSubmitBtn">Register Saree</button>
+        <div id="regResult" style="margin-top:1rem;font-size:.85rem"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ FOOTER ══════ -->
+<footer>
+  <div class="footer-top">
+    <div>
+      <div class="footer-brand">TantSaakshi</div>
+      <div class="footer-brand-bn">তাঁতসাক্ষী</div>
+      <div class="footer-tagline">Every thread bears witness · প্রতিটি সুতো সাক্ষী দেয়</div>
+    </div>
+    <div class="footer-links">
+      <button class="footer-link" onclick="showPage('verify')">Verify a Saree</button>
+      <button class="footer-link" onclick="showPage('catalogue')">Collection</button>
+      <button class="footer-link" onclick="showPage('studio')">Voice Studio</button>
+      <button class="footer-link" onclick="showPage('login')">Weaver Login</button>
+      <a class="footer-link" href="/docs" target="_blank">API Docs</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>© 2026 TantSaakshi Cooperative Trust. All rights reserved.</span>
+    <span>Built with 2D-FFT physics · তৈরি ভালোবাসায়</span>
+  </div>
+</footer>
+
+<div id="toast" class="toast">
+  <span id="toastIcon">✓</span>
+  <span id="toastMsg"></span>
+</div>
+
+<!-- ═══════════════════════════════════════
+     JAVASCRIPT LOGIC
+═══════════════════════════════════════ -->
+<script>
+let currentPage = 'home';
+let authToken = null;
+let authUser  = null;
+let selectedPhotos = [];
+let regPhotos = [];
+let catalogueItems = [];
+let activeCraft = 'All';
+
+/* Studio State */
+let studioSarees = null;
+let studioQrId = "";
+let studioRecording = false;
+let studioSeconds = 0;
+let studioTimer = null;
+let studioMediaRecorder = null;
+let studioChunks = [];
+let studioAudioBlob = null;
+let studioAudioUrl = null;
+let studioTranscript = "";
+let studioFields = null;
+let studioPublished = null;
+let studioOndcJson = null;
+
+/* ── Auth helpers ── */
+function getStoredAuth() {
+  try { return JSON.parse(localStorage.getItem('ts_auth') || 'null'); } catch { return null; }
+}
+function setStoredAuth(data) { localStorage.setItem('ts_auth', JSON.stringify(data)); }
+function clearStoredAuth() { localStorage.removeItem('ts_auth'); }
+
+function restoreAuth() {
+  const d = getStoredAuth();
+  if (d) { authToken = d.token; authUser = d; }
+  updateNavAuth();
+}
+
+function updateNavAuth() {
+  const loginBtn = document.getElementById('nav-login-btn');
+  const userBtn  = document.getElementById('nav-user-btn');
+  const rp = document.getElementById('recheckPanel');
+  if (authUser) {
+    loginBtn.style.display = 'none';
+    userBtn.style.display = 'inline-flex';
+    userBtn.textContent = `Sign out (${authUser.name || authUser.phone})`;
+    if (rp && canVerify(authUser)) rp.style.display = 'block';
+  } else {
+    loginBtn.style.display = 'inline-flex';
+    userBtn.style.display = 'none';
+    if (rp) rp.style.display = 'none';
+  }
+}
+
+function canVerify(user) { return user && ['seller','admin','staff','cooperative_admin'].includes(user.role); }
+function isStaff(user) { return user && user.role !== 'seller'; }
+
+function logout() {
+  clearStoredAuth(); authToken = null; authUser = null;
+  updateNavAuth();
+  showPage('home');
+  toast('Signed out successfully', '✓');
+}
+
+/* ── API ── */
+async function apiFetch(method, path, body, isForm) {
+  const opts = { method, headers: {} };
+  if (authToken) opts.headers['Authorization'] = 'Bearer ' + authToken;
+  if (body && !isForm) {
+    opts.headers['Content-Type'] = 'application/json';
+    opts.body = JSON.stringify(body);
+  } else if (body && isForm) {
+    opts.body = body;
+  }
+  const r = await fetch(path, opts);
+  if (!r.ok) {
+    let msg = 'Request failed';
+    try { const d = await r.json(); msg = d.message_en || d.detail || msg; } catch {}
+    throw new Error(msg);
+  }
+  const ct = r.headers.get('content-type') || '';
+  if (ct.includes('application/json')) return r.json();
+  return r.text();
+}
+
+/* ── Page Router ── */
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const pg = document.getElementById('page-' + name);
+  if (pg) pg.classList.add('active');
+  currentPage = name;
+
+  document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+  const nl = document.getElementById('nav-' + name);
+  if (nl) nl.classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  if (name === 'catalogue') loadCatalogue();
+  if (name === 'verify') updateNavAuth();
+  if (name === 'register') initRegister();
+  if (name === 'studio') initStudio();
+}
+
+/* ── Toast ── */
+function toast(msg, icon = '✓', dur = 3000) {
+  const t = document.getElementById('toast');
+  document.getElementById('toastMsg').textContent = msg;
+  document.getElementById('toastIcon').textContent = icon;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), dur);
+}
+
+/* ═══════════════════════════════════
+   VERIFY PAGE & CAPTURE
+═══════════════════════════════════ */
+function useDemoId(id) {
+  document.getElementById('qrInput').value = id;
+  inspectSaree(null, id);
+}
+
+async function inspectSaree(e, forceId) {
+  if (e) e.preventDefault();
+  const id = forceId || document.getElementById('qrInput').value.trim();
+  if (!id) { toast('Please enter a QR tag ID', '⚠'); return; }
+
+  const btn = document.getElementById('inspectBtnLabel');
+  btn.textContent = 'Consulting the loom…';
+  document.getElementById('verifyLoader').classList.add('show');
+  document.getElementById('certArea').innerHTML = '';
+
+  try {
+    const data = await apiFetch('GET', `/listing/${id}`);
+    renderCertificate(data, id);
+  } catch (err) {
+    document.getElementById('certArea').innerHTML = `
+      <div class="cert-empty" style="border-color:#fca5a5;background:#fef2f2;color:#7f1d1d">
+        <b>Tag not found</b><br>${err.message || 'Unknown QR ID'}
+        <span class="bn">ট্যাগটি পাওয়া যায়নি।</span>
+      </div>`;
+  } finally {
+    document.getElementById('verifyLoader').classList.remove('show');
+    btn.textContent = 'Inspect';
+  }
+}
+
+function renderCertificate(data, qrId) {
+  const area = document.getElementById('certArea');
+  const grade = data.grade || 'A';
+  const epi   = data.ends_per_inch ? data.ends_per_inch.toFixed(1) : '60.0';
+  const ppi   = data.picks_per_inch ? data.picks_per_inch.toFixed(1) : '58.0';
+  const type  = data.saree_type || 'Handloom Saree';
+  const coop  = data.cooperative || 'Bengal Handloom Cooperative';
+  const dist  = data.district || 'Nadia';
+  const st    = data.status || 'genuine';
+
+  area.innerHTML = `
+  <div class="cert-card">
+    <div class="cert-header">
+      <div>
+        <div class="cert-brand">TantSaakshi · তাঁতসাক্ষী</div>
+        <div style="margin-top:.4rem;font-family:monospace;font-size:.8rem;color:rgba(233,211,138,.8)">${qrId}</div>
+      </div>
+      <span class="cert-status-badge cert-status-genuine">✓ Verified Authentic</span>
+    </div>
+    <div class="cert-body">
+      <div class="cert-photo">
+        <img src="/c/${qrId}/photo" alt="Registered fabric" onerror="this.src='https://images.unsplash.com/photo-1569909115134-a0426936c879?crop=entropy&cs=srgb&fm=jpg&q=80&w=400'"/>
+        <div style="display:flex;align-items:center;gap:.75rem;margin-top:1rem;font-size:.9rem">
+          <span style="font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:800;color:var(--maroon)">${epi}</span> <span>EPI</span>
+          &nbsp;·&nbsp;<span style="font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:800;color:var(--maroon)">${ppi}</span> <span>PPI</span>
+          &nbsp;·&nbsp;<span style="font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:800;color:var(--maroon)">${grade}</span> <span>Grade</span>
+        </div>
+      </div>
+      <div class="cert-fields">
+        <dl>
+          <div><dt>Craft type</dt><dd>${type}</dd></div>
+          <div><dt>Grade</dt><dd>${grade}</dd></div>
+          <div><dt>Ends/inch</dt><dd>${epi}</dd></div>
+          <div><dt>Picks/inch</dt><dd>${ppi}</dd></div>
+          <div><dt>Cooperative</dt><dd>${coop}</dd></div>
+          <div><dt>District</dt><dd>${dist}</dd></div>
+          <div><dt>Status</dt><dd>${st}</dd></div>
+        </dl>
+        <a class="btn-luxe" href="/c/${qrId}" target="_blank" style="margin-top:1.5rem">
+          Open birth certificate →
+        </a>
+      </div>
+    </div>
+  </div>`;
+}
+
+function onPhotosSelected(input) {
+  const files = Array.from(input.files || []);
+  selectedPhotos = [...selectedPhotos, ...files].slice(0, 5);
+  renderPhotoPreviews(selectedPhotos, 'previewStrip', 'photoCountLabel', 'clearPhotosBtn');
+}
+
+function clearPhotos() {
+  selectedPhotos = [];
+  document.getElementById('captureInput').value = '';
+  document.getElementById('galleryInput').value = '';
+  renderPhotoPreviews([], 'previewStrip', 'photoCountLabel', 'clearPhotosBtn');
+}
+
+function renderPhotoPreviews(photos, stripId, countId, clearId) {
+  const strip = document.getElementById(stripId);
+  const count = document.getElementById(countId);
+  const clrBtn = clearId ? document.getElementById(clearId) : null;
+  strip.innerHTML = '';
+  if (photos.length) {
+    strip.classList.add('show');
+    photos.forEach(f => {
+      const img = document.createElement('img');
+      img.className = 'preview-thumb';
+      img.src = URL.createObjectURL(f);
+      strip.appendChild(img);
+    });
+    if (count) { count.style.display = 'block'; count.textContent = `${photos.length} photo${photos.length > 1 ? 's' : ''} ready`; }
+    if (clrBtn) clrBtn.style.display = 'inline-block';
+  } else {
+    strip.classList.remove('show');
+    if (count) count.style.display = 'none';
+    if (clrBtn) clrBtn.style.display = 'none';
+  }
+}
+
+async function doRecheck() {
+  const qrId = document.getElementById('recheckQr').value.trim();
+  if (!qrId) { toast('Enter a QR ID for re-check', '⚠'); return; }
+  if (!selectedPhotos.length) { toast('Capture photos first using the camera above', '📷'); return; }
+  if (!authToken) { toast('Please log in to use re-check', '🔒'); showPage('login'); return; }
+
+  const btn = document.getElementById('recheckBtn');
+  btn.disabled = true; btn.textContent = 'Matching fingerprint…';
+  const resDiv = document.getElementById('recheckResult');
+  resDiv.innerHTML = '';
+
+  try {
+    const fd = new FormData();
+    fd.append('upload_id', crypto.randomUUID());
+    selectedPhotos.slice(0, 3).forEach(f => fd.append('photos', f));
+    const r = await apiFetch('POST', `/verify/${qrId}`, fd, true);
+    resDiv.innerHTML = `
+      <div class="recheck-result recheck-genuine">
+        <b style="text-transform:uppercase;letter-spacing:.15em">${r.result}</b>
+        ${r.score != null ? `<span style="font-family:monospace;font-size:.8rem;margin-left:.75rem">score ${r.score.toFixed(3)}</span>` : ''}
+        ${r.message_en ? `<p style="margin-top:.4rem">${r.message_en}</p>` : ''}
+      </div>`;
+  } catch (err) {
+    resDiv.innerHTML = `<div class="recheck-result recheck-no_match"><b>Result:</b> ${err.message}</div>`;
+  } finally {
+    btn.disabled = false; btn.textContent = 'Check authenticity';
+  }
+}
+
+/* ═══════════════════════════════════
+   VOICE STUDIO LOGIC
+═══════════════════════════════════ */
+async function initStudio() {
+  const guard = document.getElementById('studioGuard');
+  const content = document.getElementById('studioContent');
+  
+  if (!authUser || !isStaff(authUser)) {
+    guard.style.display = 'block';
+    content.style.display = 'none';
+    return;
+  }
+  guard.style.display = 'none';
+  content.style.display = 'block';
+
+  document.getElementById('studioSareeLoader').style.display = 'block';
+  try {
+    const r = await apiFetch('GET', '/listings');
+    studioSarees = r.listings || [];
+    renderStudioSareePicker();
+  } catch (err) {
+    studioSarees = [];
+    renderStudioSareePicker();
+  } finally {
+    document.getElementById('studioSareeLoader').style.display = 'none';
+  }
+}
+
+function renderStudioSareePicker() {
+  const container = document.getElementById('studioUnlistedList');
+  const noneMsg = document.getElementById('studioNoneUnlisted');
+  container.innerHTML = "";
+
+  const unlisted = (studioSarees || []).filter(s => !s.listing);
+  if (!unlisted.length) {
+    noneMsg.style.display = 'block';
+    return;
+  }
+  noneMsg.style.display = 'none';
+
+  unlisted.forEach(s => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'studio-saree-btn' + (studioQrId === s.qr_id ? ' selected' : '');
+    btn.onclick = () => selectStudioSaree(s.qr_id);
+
+    btn.innerHTML = `
+      <img src="${s.photo_url || '/c/' + s.qr_id + '/photo'}" alt="${s.saree_type}" class="studio-saree-thumb" onerror="this.src='https://images.unsplash.com/photo-1569909115134-a0426936c879?crop=entropy&cs=srgb&fm=jpg&q=80&w=200'"/>
+      <div style="flex:1;overflow:hidden">
+        <div style="font-weight:700;font-size:.85rem;color:var(--maroon);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.saree_type} · ${s.district || 'Bengal'}</div>
+        <div style="font-family:monospace;font-size:.7rem;letter-spacing:.1em;color:var(--text-muted2);margin-top:.15rem">${s.qr_id} · EPI ${s.ends_per_inch ? s.ends_per_inch.toFixed(0) : '60'}</div>
+      </div>
+    `;
+    container.appendChild(btn);
+  });
+}
+
+function selectStudioSaree(qrId) {
+  studioQrId = qrId.trim();
+  document.getElementById('studioQrManual').value = studioQrId;
+  renderStudioSareePicker();
+  
+  const micBtn = document.getElementById('studioMicBtn');
+  micBtn.disabled = false;
+  document.getElementById('studioRecordState').textContent = 'Tap to speak · বলতে স্পর্শ করুন';
+  toast(`Selected weave ${studioQrId}`, '🧵');
+}
+
+function onStudioManualQr(val) {
+  studioQrId = val.trim();
+  const micBtn = document.getElementById('studioMicBtn');
+  micBtn.disabled = !studioQrId;
+  document.getElementById('studioRecordState').textContent = studioQrId ? 'Tap to speak · বলতে স্পর্শ করুন' : 'Choose a weave first';
+}
+
+async function toggleStudioRecording() {
+  if (!studioRecording) {
+    await startStudioRecording();
+  } else {
+    stopStudioRecording();
+  }
+}
+
+async function startStudioRecording() {
+  const errBox = document.getElementById('studioError');
+  errBox.style.display = 'none';
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    studioMediaRecorder = new MediaRecorder(stream);
+    studioChunks = [];
+
+    studioMediaRecorder.ondataavailable = e => {
+      if (e.data && e.data.size > 0) studioChunks.push(e.data);
+    };
+
+    studioMediaRecorder.onstop = () => {
+      studioAudioBlob = new Blob(studioChunks, { type: 'audio/webm' });
+      studioAudioUrl = URL.createObjectURL(studioAudioBlob);
+      document.getElementById('studioAudioPlayback').src = studioAudioUrl;
+      document.getElementById('studioAudioWrap').style.display = 'block';
+      stream.getTracks().forEach(t => t.stop());
+    };
+
+    studioMediaRecorder.start();
+    studioRecording = true;
+    studioSeconds = 0;
+    document.getElementById('studioMicBtn').classList.add('recording');
+    document.getElementById('studioRecordState').textContent = 'Recording · লেখা হচ্ছে…';
+
+    clearInterval(studioTimer);
+    studioTimer = setInterval(() => {
+      studioSeconds++;
+      const mins = String(Math.floor(studioSeconds / 60)).padStart(2, '0');
+      const secs = String(studioSeconds % 60).padStart(2, '0');
+      document.getElementById('studioTimer').textContent = `${mins}:${secs}`;
+    }, 1000);
+
+  } catch (err) {
+    errBox.textContent = "Microphone permission is needed for the voice studio. মাইক্রোফোনের অনুমতি দিন।";
+    errBox.style.display = 'block';
+  }
+}
+
+function stopStudioRecording() {
+  if (studioMediaRecorder && studioRecording) {
+    studioMediaRecorder.stop();
+    studioRecording = false;
+    clearInterval(studioTimer);
+    document.getElementById('studioMicBtn').classList.remove('recording');
+    document.getElementById('studioRecordState').textContent = 'Voice saved · ধারণকৃত';
+  }
+}
+
+async function transcribeStudioVoice() {
+  const btn = document.getElementById('studioTranscribeBtn');
+  const lbl = document.getElementById('studioTranscribeLabel');
+  const errBox = document.getElementById('studioError');
+  errBox.style.display = 'none';
+
+  btn.disabled = true;
+  lbl.textContent = 'Listening deeply…';
+
+  try {
+    const fd = new FormData();
+    if (studioAudioBlob) fd.append('audio', studioAudioBlob, 'voice.webm');
+    else fd.append('audio', new Blob(['voice'], { type: 'audio/webm' }), 'voice.webm');
+    
+    const r = await apiFetch('POST', '/transcribe', fd, true);
+
+    studioTranscript = r.transcript || '';
+    studioFields = r.fields || {};
+
+    document.getElementById('studioTranscriptText').textContent = `“${studioTranscript}”`;
+    document.getElementById('studioTranscriptBox').style.display = 'block';
+
+    document.getElementById('field_title_en').value = studioFields.title_en || '';
+    document.getElementById('field_title_bn').value = studioFields.title_bn || '';
+    document.getElementById('field_colour').value = studioFields.colour || '';
+    document.getElementById('field_motif').value = studioFields.motif || '';
+    document.getElementById('field_occasion').value = studioFields.occasion || '';
+    document.getElementById('field_price_inr').value = studioFields.price_inr || '';
+    document.getElementById('field_story_bn').value = studioFields.story_bn || '';
+    document.getElementById('field_story_en').value = studioFields.story_en || '';
+
+    document.getElementById('studioFieldsCard').style.display = 'block';
+    toast('Voice transcribed successfully!', '🎙');
+
+  } catch (err) {
+    errBox.textContent = err.message || "Transcription failed";
+    errBox.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    lbl.textContent = 'AI, write my listing';
+  }
+}
+
+async function publishStudioListing() {
+  if (!studioQrId) {
+    toast('Please choose a weave first', '⚠');
+    return;
+  }
+  const btn = document.getElementById('studioPublishBtn');
+  const lbl = document.getElementById('studioPublishLabel');
+  const errBox = document.getElementById('studioError');
+  errBox.style.display = 'none';
+
+  btn.disabled = true;
+  lbl.textContent = 'Publishing…';
+
+  const payload = {
+    title: document.getElementById('field_title_en').value || document.getElementById('field_title_bn').value || 'Handloom Saree',
+    price_inr: parseFloat(document.getElementById('field_price_inr').value) || null,
+    story_bn: document.getElementById('field_story_bn').value || '',
+    story_en: document.getElementById('field_story_en').value || '',
+    occasion: document.getElementById('field_occasion').value || '',
+    colour: document.getElementById('field_colour').value || '',
+    motif: document.getElementById('field_motif').value || '',
+    language: 'bn',
+  };
+
+  try {
+    const r = await apiFetch('POST', `/listings/${studioQrId}`, payload);
+    studioPublished = r;
+
+    document.getElementById('studioShareCard').style.display = 'block';
+    document.getElementById('studioCertLink').href = r.certificate_url || `/c/${studioQrId}`;
+    toast('Listing published to the world!', '🏵');
+    document.getElementById('studioShareCard').scrollIntoView({ behavior: 'smooth' });
+
+  } catch (err) {
+    errBox.textContent = err.message || "Could not publish the listing";
+    errBox.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    lbl.textContent = 'Publish to the world';
+  }
+}
+
+async function shareStudioWhatsApp() {
+  const phone = document.getElementById('studioSharePhone').value.trim();
+  const btn = document.getElementById('studioShareBtn');
+  btn.disabled = true; btn.textContent = 'Sending…';
+
+  try {
+    const r = await apiFetch('POST', `/listings/${studioQrId}/share`, { to: phone || null });
+    document.getElementById('studioShareSent').style.display = 'block';
+    if (r.share_url) window.open(r.share_url, '_blank');
+  } catch (err) {
+    toast(err.message || 'Share failed', '⚠');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Send on WhatsApp';
+  }
+}
+
+async function loadStudioOndc() {
+  try {
+    const r = await apiFetch('GET', `/ondc/${studioQrId}`);
+    studioOndcJson = JSON.stringify(r, null, 2);
+    document.getElementById('studioOndcCode').textContent = studioOndcJson;
+    document.getElementById('studioOndcModal').classList.remove('hidden');
+  } catch {
+    toast('ONDC export not ready for this saree yet', '⚠');
+  }
+}
+
+function closeStudioOndc() { document.getElementById('studioOndcModal').classList.add('hidden'); }
+function copyStudioOndc() {
+  if (studioOndcJson) {
+    navigator.clipboard.writeText(studioOndcJson);
+    toast('ONDC payload copied to clipboard!', '📋');
+  }
+}
+
+function resetStudio() {
+  studioQrId = "";
+  studioAudioBlob = null;
+  studioAudioUrl = null;
+  studioTranscript = "";
+  studioFields = null;
+  document.getElementById('studioQrManual').value = "";
+  document.getElementById('studioTranscriptBox').style.display = 'none';
+  document.getElementById('studioFieldsCard').style.display = 'none';
+  document.getElementById('studioShareCard').style.display = 'none';
+  document.getElementById('studioAudioWrap').style.display = 'none';
+  document.getElementById('studioTimer').textContent = '00:00';
+  document.getElementById('studioRecordState').textContent = 'Choose a weave first';
+  document.getElementById('studioMicBtn').disabled = true;
+  initStudio();
+}
+
+/* ═══════════════════════════════════
+   CATALOGUE
+═══════════════════════════════════ */
+async function loadCatalogue() {
+  if (catalogueItems.length) { renderCatalogue(); return; }
+  document.getElementById('catalogueLoader').style.display = 'block';
+  document.getElementById('catalogueGrid').innerHTML = '';
+  try {
+    const d = await apiFetch('GET', '/listings');
+    catalogueItems = d.listings || [];
+    renderFilterBar();
+    renderCatalogue();
+  } catch {
+    document.getElementById('catalogueGrid').innerHTML = '<p style="text-align:center;color:var(--text-muted);padding:3rem">Could not load the collection. Please try again.</p>';
+  } finally {
+    document.getElementById('catalogueLoader').style.display = 'none';
+  }
+}
+
+function renderFilterBar() {
+  const crafts = ['All', ...new Set(catalogueItems.map(i => i.saree_type).filter(Boolean))];
+  const bar = document.getElementById('filterBar');
+  bar.innerHTML = crafts.map(c => `
+    <button class="filter-chip${c === activeCraft ? ' active' : ''}" onclick="setCraft('${c}')">${c}</button>
+  `).join('');
+}
+
+function setCraft(c) { activeCraft = c; renderFilterBar(); renderCatalogue(); }
+
+const CRAFT_IMGS = {
+  Tant: 'https://images.unsplash.com/photo-1569909115134-a0426936c879?crop=entropy&cs=srgb&fm=jpg&q=80&w=600',
+  Jamdani: 'https://images.unsplash.com/photo-1638310533874-6c124c012e1d?crop=entropy&cs=srgb&fm=jpg&q=80&w=600',
+  Baluchari: 'https://images.pexels.com/photos/14953193/pexels-photo-14953193.jpeg?auto=compress&cs=tinysrgb&h=600&w=600',
+  Kantha: 'https://images.unsplash.com/photo-1588140686379-1b76a52103dc?crop=entropy&cs=srgb&fm=jpg&q=80&w=600',
+};
+function craftImg(item) { return CRAFT_IMGS[item.saree_type] || `/c/${item.qr_id}/photo`; }
+function money(p) { return p ? `₹${p.toLocaleString('en-IN')}` : 'Price on request'; }
+
+function renderCatalogue() {
+  const shown = activeCraft === 'All' ? catalogueItems : catalogueItems.filter(i => i.saree_type === activeCraft);
+  const grid = document.getElementById('catalogueGrid');
+  const empty = document.getElementById('catalogueEmpty');
+  if (!shown.length) { grid.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  grid.innerHTML = shown.map((item, idx) => `
+    <article class="cat-card" onclick="openDetail(${idx})">
+      <div class="cat-card-img">
+        <img src="${craftImg(item)}" alt="${item.saree_type}" loading="lazy" onerror="this.src='${craftImg({saree_type:'Tant'})}'"/>
+        <span class="cat-badge-verified">${item.tag_status === 'listed' ? 'Verified · Listed' : 'Verified'}</span>
+      </div>
+      <div class="cat-card-body">
+        <div class="cat-name">${item.saree_type} Saree</div>
+        <div class="cat-craft">${item.district || 'West Bengal'}</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:.75rem">
+          <span class="cat-price">${money(item.listing?.price_inr)}</span>
+          <span class="cat-epi">${item.ends_per_inch ? item.ends_per_inch.toFixed(0) : '60'}×${item.picks_per_inch ? item.picks_per_inch.toFixed(0) : '58'}/in</span>
+        </div>
+        <div style="font-size:.72rem;color:var(--text-muted2);margin-top:.35rem">${item.cooperative || ''}</div>
+      </div>
+    </article>
+  `).join('');
+}
+
+function openDetail(idx) {
+  const shown = activeCraft === 'All' ? catalogueItems : catalogueItems.filter(i => i.saree_type === activeCraft);
+  const item = shown[idx]; if (!item) return;
+  const modal = document.getElementById('detailModal');
+  document.getElementById('modalGrid').innerHTML = `
+    <img src="${craftImg(item)}" alt="${item.saree_type}" style="max-height:420px;object-fit:cover"/>
+    <div class="modal-body">
+      <div class="eyebrow" style="color:var(--gold-mid)">${item.saree_type}</div>
+      <h2 style="font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:800;color:var(--maroon);margin:.5rem 0">${item.listing?.title || item.saree_type + ' Handloom Saree'}</h2>
+      <p style="font-size:.85rem;color:var(--text-mid);line-height:1.7">${item.listing?.story_en || 'This weave is thread-verified; the weaver\'s story is on its way.'}</p>
+      <div style="font-family:'Playfair Display',serif;font-size:1.75rem;font-weight:800;color:var(--maroon-mid);margin:1rem 0">${money(item.listing?.price_inr)}</div>
+      <a href="/c/${item.qr_id}" target="_blank" class="btn-luxe" style="margin-top:1.5rem">Open birth certificate →</a>
+    </div>
+  `;
+  modal.classList.remove('hidden');
+}
+function closeModal() { document.getElementById('detailModal').classList.add('hidden'); }
+
+/* ═══════════════════════════════════
+   LOGIN & REGISTER
+═══════════════════════════════════ */
+async function doLogin(e) {
+  e.preventDefault();
+  const phone = document.getElementById('loginPhone').value.trim();
+  const pin   = document.getElementById('loginPin').value.trim();
+  const btn   = document.getElementById('loginBtn');
+  const errDiv = document.getElementById('loginError');
+  btn.disabled = true; btn.textContent = 'Opening the loom…';
+  errDiv.style.display = 'none';
+
+  try {
+    const r = await apiFetch('POST', '/login', { phone, pin });
+    setStoredAuth({ ...r, phone });
+    authToken = r.token; authUser = { ...r, phone };
+    updateNavAuth();
+    toast(`Welcome, ${r.name || phone}!`, '✓');
+    if (r.role === 'seller') showPage('verify');
+    else showPage('studio');
+  } catch (err) {
+    errDiv.textContent = err.message || 'Wrong phone or PIN';
+    errDiv.style.display = 'block';
+  } finally {
+    btn.disabled = false; btn.textContent = 'Enter · প্রবেশ';
+  }
+}
+
+async function initRegister() {
+  if (!authUser || !isStaff(authUser)) {
+    document.getElementById('registerGuard').style.display = 'block';
+    document.getElementById('registerContent').style.display = 'none';
+    return;
+  }
+  document.getElementById('registerGuard').style.display = 'none';
+  document.getElementById('registerContent').style.display = 'flex';
+  loadWeavers();
+}
+
+async function loadWeavers() {
+  try {
+    const d = await apiFetch('GET', '/weavers');
+    const sel = document.getElementById('weaverSelect');
+    sel.innerHTML = (d.weavers || d).map(w => `<option value="${w.id}">${w.name} · ${w.village || ''}</option>`).join('');
+  } catch {
+    document.getElementById('weaverSelect').innerHTML = '<option value="">Could not load weavers</option>';
+  }
+}
+
+async function generateTags() {
+  const count = parseInt(document.getElementById('tagCount').value) || 10;
+  const res = document.getElementById('tagResult');
+  res.innerHTML = '<span style="color:var(--text-muted)">Generating…</span>';
+  try {
+    const d = await apiFetch('POST', '/tags/generate', { count });
+    res.innerHTML = `<div style="color:#15803d;font-weight:600">✓ ${count} tags generated — Batch <code>${d.batch_no}</code><br><a href="${d.pdf_url}" target="_blank" class="btn-gold" style="margin-top:.5rem;display:inline-flex;padding:.4rem .8rem;font-size:.7rem">Download PDF</a></div>`;
+  } catch (err) { res.innerHTML = `<span style="color:#b91c1c">Error: ${err.message}</span>`; }
+}
+
+async function createBatch() {
+  const weaverId = document.getElementById('weaverSelect').value;
+  const sareeType = document.getElementById('sareeType').value;
+  if (!weaverId) { toast('Please select a weaver', '⚠'); return; }
+  const res = document.getElementById('batchResult');
+  res.innerHTML = '<span style="color:var(--text-muted)">Creating batch…</span>';
+  try {
+    const d = await apiFetch('POST', '/batch', { weaver_id: parseInt(weaverId), saree_type: sareeType });
+    res.innerHTML = `<div style="color:#15803d;font-weight:600">✓ Batch created — ID <code>${d.batch_id}</code></div>`;
+    document.getElementById('regBatchId').value = d.batch_id;
+  } catch (err) { res.innerHTML = `<span style="color:#b91c1c">Error: ${err.message}</span>`; }
+}
+
+function onRegPhotos(input) {
+  const files = Array.from(input.files || []);
+  regPhotos = [...regPhotos, ...files].slice(0, 5);
+  renderPhotoPreviews(regPhotos, 'regPhotoPreview', 'regPhotoCount', null);
+}
+
+async function registerSaree() {
+  const qrId = document.getElementById('regQrId').value.trim();
+  const batchId = document.getElementById('regBatchId').value.trim();
+  if (!qrId || !batchId) { toast('Enter QR ID and Batch ID', '⚠'); return; }
+  if (!regPhotos.length) { toast('Capture at least 1 fabric photo', '📷'); return; }
+
+  const btn = document.getElementById('regSubmitBtn');
+  btn.disabled = true; btn.textContent = 'Registering…';
+  const res = document.getElementById('regResult');
+  res.innerHTML = '<span style="color:var(--text-muted)">Uploading photos…</span>';
+
+  try {
+    const fd = new FormData();
+    fd.append('qr_id', qrId);
+    fd.append('batch_id', batchId);
+    fd.append('upload_id', crypto.randomUUID());
+    fd.append('phone_model', 'web');
+    regPhotos.forEach(f => fd.append('photos', f));
+    await apiFetch('POST', '/saree', fd, true);
+    res.innerHTML = `<div style="color:#15803d;font-weight:600">✓ Saree registered! <a href="/c/${qrId}" target="_blank" class="btn-luxe" style="margin-top:.5rem;display:inline-flex;padding:.4rem .8rem;font-size:.68rem">View certificate</a></div>`;
+    regPhotos = []; renderPhotoPreviews([], 'regPhotoPreview', 'regPhotoCount', null);
+  } catch (err) { res.innerHTML = `<span style="color:#b91c1c">Error: ${err.message}</span>`; }
+  finally { btn.disabled = false; btn.textContent = 'Register Saree'; }
+}
+
+/* ── Init & URL routing ── */
+restoreAuth();
+
+const path = window.location.pathname.replace(/^\//, '').toLowerCase();
+if (path === 'studio' || window.location.hash === '#studio') {
+  showPage('studio');
+} else if (path === 'verify' || window.location.hash === '#verify') {
+  showPage('verify');
+} else if (path === 'catalogue' || window.location.hash === '#catalogue') {
+  showPage('catalogue');
+} else if (path === 'login' || window.location.hash === '#login') {
+  showPage('login');
+} else if (path === 'register' || window.location.hash === '#register') {
+  showPage('register');
+}
+
+apiFetch('GET', '/listings').then(d => {
+  const items = d.listings || [];
+  if (items.length && items[0].ends_per_inch) {
+    document.getElementById('heroEpi').textContent = `EPI ${items[0].ends_per_inch.toFixed(1)}`;
+  }
+}).catch(() => {});
+</script>
+</body>
+</html>

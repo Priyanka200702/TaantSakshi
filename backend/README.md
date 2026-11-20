@@ -147,6 +147,12 @@ python backend/worker/worker.py
 
 The worker continuously polls for `queued` saree registrations, executes the vision engine, updates fabric metrics (EPI, PPI, grade, defects, irregularity), saves the private fingerprint, and marks the registration `done`. If photo quality fails (e.g. `NO_CARD`, `TOO_TILTED`), it safely releases the QR tag back to `blank` status so the weaver/staff does not waste the physical tag.
 
+### 6. Open the Front-End App
+
+With the API server running, open `http://localhost:8000/app` on a phone or desktop browser. The app follows the front-end guide's seven screens: login, home, batch setup, camera capture, batch summary, verification, and the upload queue.
+
+The app uses the existing `/login`, `/weavers`, `/batch`, `/saree`, and `/verify/{qr_id}` endpoints. Captured photos are saved in IndexedDB before upload, then sent as the connection allows. Supported browsers can also retry queued uploads in the background. Camera access and background sync require HTTPS on a deployed site; `localhost` is allowed for local development. The live QR scanner uses the browser's `BarcodeDetector` when available and provides a tag-ID entry fallback.
+
 ---
 
 ## Automated Test Suite
